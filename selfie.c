@@ -141,6 +141,7 @@ char* store_character(char* s, uint64_t i, char c);
 
 uint64_t is_letter(char c);
 uint64_t is_digit(char c);
+uint64_t is_hex(char c);
 
 char*    string_alloc(uint64_t l);
 uint64_t string_length(char* s);
@@ -149,6 +150,7 @@ void     string_reverse(char* s);
 uint64_t string_compare(char* s, char* t);
 
 uint64_t atoi(char* s);
+uint64_t atoi_hex(char* s);
 char*    itoa(uint64_t n, char* s, uint64_t b, uint64_t d, uint64_t a);
 
 uint64_t fixed_point_ratio(uint64_t a, uint64_t b, uint64_t f);
@@ -470,6 +472,7 @@ uint64_t* SYMBOLS; // strings representing symbols
 uint64_t MAX_IDENTIFIER_LENGTH = 64;  // maximum number of characters in an identifier
 uint64_t MAX_INTEGER_LENGTH    = 20;  // maximum number of characters in an unsigned integer
 uint64_t MAX_STRING_LENGTH     = 128; // maximum number of characters in a string
+uint64_t MAX_HEX_LENGTH        = 16;  // maximum number of characters in a hex unsigned integer
 
 // ------------------------ GLOBAL VARIABLES -----------------------
 
@@ -2802,6 +2805,22 @@ uint64_t is_digit(char c) {
     return 0;
 }
 
+uint64_t is_hex(char c) {
+  if (c >= '0') 
+    if (c <= '9')
+      return 1;
+
+  if (c >= 'a') 
+    if (c <= 'f') 
+      return 1; 
+    
+  if (c >= 'A') 
+    if (c <= 'F') 
+      return 1;
+  
+  return 0;
+}
+
 char* string_alloc(uint64_t l) {
   // allocates zeroed memory for a string of l characters
   // plus a null terminator aligned to word size
@@ -2954,6 +2973,77 @@ uint64_t atoi(char* s) {
     }
   else
     return n;
+}
+
+uint64_t atoi_hex(char* s) {
+  uint64_t i;
+  uint64_t n;
+  uint64_t c;
+
+  // the conversion of the ASCII string in s to its
+  // numerical value n begins with the leftmost digit in s
+  i = 0;
+
+  // and the numerical value 0 for n
+  n = 0;
+
+  // load character (one byte) at index i in s from memory requires
+  // bit shifting since memory access can only be done at word granularity
+  c = load_character(s, i);
+
+  while (c != 0) {
+
+    if (is_hex(c) == 0) {
+      printf("%s: cannot convert non-hexadecimal number %s\n", selfie_name, s);
+
+      exit(EXITCODE_SCANNERERROR);
+    }
+
+    // assert: s contains a hexadecimal number
+
+    if (c >= '0') 
+      if (c <= '9')
+        c = c - '0';
+
+    if (c >= 'a') 
+        if (c <= 'f') 
+          c = c - 'a' + 10;
+
+    if (c >= 'A') 
+        if (c <= 'F') 
+          c = c - 'A' + 10;    
+    
+
+    // use base 16 but detect wrap around
+    if (n < UINT_MAX / 16)
+        n = n * 16 + c;
+    else if (n == UINT_MAX / 16)
+        if (c <= UINT_MAX % 16)
+            n = n * 16 + c;
+        else
+        {
+          // s contains a hexadecimal number larger than UINT_MAX
+          printf("%s: cannot convert out-of-bound hexadecimal number %s\n", selfie_name, s);
+
+          exit(EXITCODE_SCANNERERROR);
+        }
+    else
+    {
+      // s contains a hexadecimal number larger than UINT_MAX
+      printf("%s: cannot convert out-of-bound hexadecimal number %s\n", selfie_name, s);
+
+      exit(EXITCODE_SCANNERERROR);
+    }
+
+    // go to the next digit
+    i = i + 1;
+
+    // load character (one byte) at index i in s from memory requires
+    // bit shifting since memory access can only be done at word granularity
+    c = load_character(s, i);
+  }
+
+  return n;
 }
 
 char* itoa(uint64_t n, char* s, uint64_t b, uint64_t d, uint64_t a) {
@@ -3757,12 +3847,41 @@ void get_symbol() {
         store_character(identifier, i, 0); // null-terminated string
 
         symbol = identifier_or_keyword();
+
       } else if (is_digit(character)) {
         if (character == '0') {
           // 0 is 0, not 00, 000, etc.
           get_character();
 
-          literal = 0;
+          if (character == 'x') {
+            integer = string_alloc(MAX_HEX_LENGTH);
+
+            get_character();
+            
+            i = 0;
+
+            while (is_hex(character)) { 
+              if (i >= MAX_INTEGER_LENGTH) {
+                if (integer_is_signed)
+                    syntax_error_message("signed integer out of bound");
+                else
+                    syntax_error_message("hexadecimal integer out of bound");
+                exit(EXITCODE_SCANNERERROR);
+              }
+              store_character(integer, i, character);
+
+              i = i + 1;
+
+              get_character();
+
+            }
+            store_character(integer, i, 0); // null-terminated string
+
+            literal = atoi_hex(integer);   // TODO: define atoi_hex()
+          } else {
+              literal = 0;
+            }
+          
         } else {
           // accommodate integer and null for termination
           integer = string_alloc(MAX_INTEGER_LENGTH);

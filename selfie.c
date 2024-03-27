@@ -3855,12 +3855,12 @@ void get_symbol() {
           get_character();
 
           if (character == 'x') {
-
+            integer = string_alloc(MAX_HEX_LENGTH);
+            
             get_character();
             
-            integer = string_alloc(MAX_HEX_LENGTH);
-
             i = 0;
+
             while (is_hex(character)) { 
               if (i >= MAX_INTEGER_LENGTH) {
                 if (integer_is_signed)

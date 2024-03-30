@@ -459,7 +459,7 @@ uint64_t SYM_LEQ          = 26; // <=
 uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
-uint64_t SYM_LSHIFT       = 34; // <<
+uint64_t SYM_LSHIFT       = 34; // << [bitwise-shift-compilation]
 uint64_t SYM_RSHIFT       = 35; // >>
 
 // symbols for bootstrapping
@@ -538,7 +538,7 @@ void init_scanner () {
   *(SYMBOLS + SYM_GT)           = (uint64_t) ">";
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
-  *(SYMBOLS + SYM_LSHIFT)       = (uint64_t) "<<";
+  *(SYMBOLS + SYM_LSHIFT)       = (uint64_t) "<<"; // [bitwise-shift-compilation]
   *(SYMBOLS + SYM_RSHIFT)       = (uint64_t) ">>";
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -672,7 +672,7 @@ void     tfree(uint64_t number_of_temporaries);
 // -----------------------------------------------------------------
 
 uint64_t is_type();
-uint64_t is_bshift();
+uint64_t is_bshift(); // [bitwise-shift-compilation]
 uint64_t is_value();
 uint64_t is_expression();
 uint64_t is_comparison();
@@ -726,6 +726,7 @@ uint64_t compile_expression(); // returns type
 uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
+uint64_t compile_shift(); 
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -4056,7 +4057,7 @@ void get_symbol() {
           syntax_error_expected_character(CHAR_EQUAL);
 
         symbol = SYM_NOTEQ;
-      } else if (character == CHAR_LT) {
+      } else if (character == CHAR_LT) {  //[bitwise-shift-compilation]
         get_character();
 
         if (character == CHAR_LT) {

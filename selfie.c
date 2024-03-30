@@ -459,6 +459,8 @@ uint64_t SYM_LEQ          = 26; // <=
 uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
+uint64_t SYM_LSHIFT       = 34; // <<
+uint64_t SYM_RSHIFT       = 35; // >>
 
 // symbols for bootstrapping
 

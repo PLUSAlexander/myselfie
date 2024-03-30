@@ -672,6 +672,7 @@ void     tfree(uint64_t number_of_temporaries);
 // -----------------------------------------------------------------
 
 uint64_t is_type();
+uint64_t is_bshift();
 uint64_t is_value();
 uint64_t is_expression();
 uint64_t is_comparison();
@@ -4331,6 +4332,15 @@ void tfree(uint64_t number_of_temporaries) {
 
 uint64_t is_type() {
   return symbol == SYM_UINT64;
+}
+
+uint64_t is_bshift() {
+  if (symbol == SYM_LSHIFT)
+    return 1;
+  else if (symbol == SYM_RSHIFT)
+    return 1;
+  else
+    return 0;
 }
 
 uint64_t is_value() {

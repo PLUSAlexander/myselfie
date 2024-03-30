@@ -726,7 +726,7 @@ uint64_t compile_expression(); // returns type
 uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
-uint64_t compile_shift(); 
+uint64_t compile_shift(); // [bitwise-shift-compilation]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -5347,6 +5347,16 @@ uint64_t compile_factor() {
   else
     // type of factor is grammar attribute
     return type;
+}
+
+uint64_t compile_shift() { // [bitwise-shift-compilation]
+
+
+
+
+
+
+
 }
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value) {

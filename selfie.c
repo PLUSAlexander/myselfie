@@ -4056,7 +4056,11 @@ void get_symbol() {
       } else if (character == CHAR_LT) {
         get_character();
 
-        if (character == CHAR_EQUAL) {
+        if (character == CHAR_LT) {
+          get_character();
+          
+          symbol = SYM_LSHIFT;
+        } else if (character == CHAR_EQUAL) {
           get_character();
 
           symbol = SYM_LEQ;
@@ -4065,7 +4069,11 @@ void get_symbol() {
       } else if (character == CHAR_GT) {
         get_character();
 
-        if (character == CHAR_EQUAL) {
+        if (character == CHAR_GT) {
+          get_character();
+
+          symbol = SYM_RSHIFT;
+        } else if (character == CHAR_EQUAL) {
           get_character();
 
           symbol = SYM_GEQ;

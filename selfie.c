@@ -1584,6 +1584,9 @@ void do_mul();
 void do_divu();
 void do_remu();
 
+void do_sll(); // [bitwise-shift-compilation]
+void do_srl(); // [bitwise-shift-compilation]
+
 void do_sltu();
 
 uint64_t print_load();
@@ -1835,6 +1838,8 @@ uint64_t nopc_store = 0;
 uint64_t nopc_beq   = 0;
 uint64_t nopc_jal   = 0;
 uint64_t nopc_jalr  = 0;
+uint64_t nopc_sll   = 0; // [bitwise-shift-compilation]
+uint64_t nopc_srl   = 0; // [bitwise-shift-compilation]
 
 // source profile
 
@@ -5241,7 +5246,6 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
       emit_sll(previous_temporary(), previous_temporary(), current_temporary());
     else if (operator_symbol == SYM_SRL)
       emit_srl(previous_temporary(), previous_temporary(), current_temporary());
-      // TODO: implement emit_sll, emit_srl
 
 
     tfree(1);
@@ -7220,13 +7224,13 @@ void emit_sltu(uint64_t rd, uint64_t rs1, uint64_t rs2) {
 }
 
 void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compilation]
-  emit_instruction(encode_r_format(F7_SLTU, rs2, rs1, F3_SLTU, rd, OP_OP)); 
+  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); 
 
   ic_sll = ic_sll + 1;
 }
 
 void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compilation]
-  emit_instruction(encode_r_format(F7_SLTU, rs2, rs1, F3_SLTU, rd, OP_OP)); 
+  emit_instruction(encode_r_format(F7_SRL, rs2, rs1, F3_SRL, rd, OP_OP)); 
 
   ic_srl = ic_srl + 1;
 }
@@ -9099,6 +9103,54 @@ void do_add() {
   pc = pc + INSTRUCTIONSIZE;
 
   ic_add = ic_add + 1;
+}
+
+void do_sll() {
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) << *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_sll = nopc_sll + 1;
+  } else
+    nopc_sll = nopc_sll + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_sll = ic_sll + 1;
+}
+
+void do_srl() {
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) >> *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_srl = nopc_srl + 1;
+  } else
+    nopc_srl = nopc_srl + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_srl = ic_srl + 1;
 }
 
 void do_sub() {

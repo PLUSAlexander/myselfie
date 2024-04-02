@@ -5031,14 +5031,14 @@ void compile_assignment(char* variable) {
   // assert: allocated_temporaries == 0
 }
 
-uint64_t compile_expression() {
+uint64_t compile_expression() {  
   uint64_t ltype;
   uint64_t operator_symbol;
   uint64_t rtype;
 
   // assert: n = allocated_temporaries
 
-  ltype = compile_arithmetic();
+  ltype = compile_shift();  // [bitwise-shift-compilation]
 
   // assert: allocated_temporaries == n + 1
 
@@ -5048,7 +5048,7 @@ uint64_t compile_expression() {
 
     get_symbol();
 
-    rtype = compile_arithmetic();
+    rtype = compile_shift();  // [bitwise-shift-compilation]
 
     // assert: allocated_temporaries == n + 2
 

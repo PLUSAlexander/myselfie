@@ -459,13 +459,15 @@ uint64_t SYM_LEQ          = 26; // <=
 uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
+uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
+uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 33; // const
+uint64_t SYM_CONST    = 36; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -536,6 +538,8 @@ void init_scanner () {
   *(SYMBOLS + SYM_GT)           = (uint64_t) ">";
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
+  *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "<<"; // [bitwise-shift-compilation]
+  *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) ">>"; // [bitwise-shift-compilation]
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
   *(SYMBOLS + SYM_CHAR)     = (uint64_t) "char";
@@ -676,6 +680,8 @@ uint64_t is_mult_or_div_or_rem();
 uint64_t is_factor();
 uint64_t is_literal();
 
+uint64_t is_shift(); // [bitwise-shift-compilation]
+
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
 
@@ -721,6 +727,8 @@ uint64_t compile_expression(); // returns type
 uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
+
+uint64_t compile_shift(); // [bitwise-shift-arithmetic]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -1007,6 +1015,8 @@ uint64_t F3_SW    = 2; // 010
 uint64_t F3_BEQ   = 0; // 000
 uint64_t F3_JALR  = 0; // 000
 uint64_t F3_ECALL = 0; // 000
+uint64_t F3_SLL   = 1; // [bitwise-shift-compilation]
+uint64_t F3_SRL   = 5; // [bitwise-shift-compilation]
 
 // f7-codes
 uint64_t F7_ADD  = 0;  // 0000000
@@ -1015,6 +1025,8 @@ uint64_t F7_SUB  = 32; // 0100000
 uint64_t F7_DIVU = 1;  // 0000001
 uint64_t F7_REMU = 1;  // 0000001
 uint64_t F7_SLTU = 0;  // 0000000
+uint64_t F7_SLL  = 0;  // [bitwise-shift-compilation] according to https://www.cs.sfu.ca/~ashriram/Courses/CS295/assets/notebooks/RISCV/RISCV_CARD.pdf
+uint64_t F7_SRL  = 0;  // [bitwise-shift-compilation]
 
 // f12-codes (immediates)
 uint64_t F12_ECALL = 0; // 000000000000
@@ -1069,6 +1081,9 @@ void emit_mul(uint64_t rd, uint64_t rs1, uint64_t rs2);
 void emit_divu(uint64_t rd, uint64_t rs1, uint64_t rs2);
 void emit_remu(uint64_t rd, uint64_t rs1, uint64_t rs2);
 void emit_sltu(uint64_t rd, uint64_t rs1, uint64_t rs2);
+
+void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
+void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate);
 void emit_store(uint64_t rs1, uint64_t immediate, uint64_t rs2);
@@ -1197,6 +1212,8 @@ uint64_t ic_beq   = 0;
 uint64_t ic_jal   = 0;
 uint64_t ic_jalr  = 0;
 uint64_t ic_ecall = 0;
+uint64_t ic_sll   = 0; // [bitwise-shift-compilation]
+uint64_t ic_srl   = 0; // [bitwise-shift-compilation]
 
 // data counters
 
@@ -1569,6 +1586,9 @@ void do_mul();
 void do_divu();
 void do_remu();
 
+void do_sll(); // [bitwise-shift-compilation]
+void do_srl(); // [bitwise-shift-compilation]
+
 void do_sltu();
 
 uint64_t print_load();
@@ -1820,6 +1840,8 @@ uint64_t nopc_store = 0;
 uint64_t nopc_beq   = 0;
 uint64_t nopc_jal   = 0;
 uint64_t nopc_jalr  = 0;
+uint64_t nopc_sll   = 0; // [bitwise-shift-compilation]
+uint64_t nopc_srl   = 0; // [bitwise-shift-compilation]
 
 // source profile
 
@@ -4058,7 +4080,12 @@ void get_symbol() {
           get_character();
 
           symbol = SYM_LEQ;
+        } else if (character == CHAR_LT) {
+          get_character();
+
+          symbol = SYM_SLL;
         } else
+
           symbol = SYM_LT;
       } else if (character == CHAR_GT) {
         get_character();
@@ -4067,7 +4094,12 @@ void get_symbol() {
           get_character();
 
           symbol = SYM_GEQ;
+        } else if (character == CHAR_GT) {
+          get_character();
+
+          symbol = SYM_SRL;
         } else
+
           symbol = SYM_GT;
       } else if (character == CHAR_DOT) {
         get_character();
@@ -4369,6 +4401,15 @@ uint64_t is_mult_or_div_or_rem() {
     return 1;
   else
     return 0;
+}
+
+uint64_t is_shift() { // [bitwise-shift-compilation]
+  if (symbol == SYM_SLL) { 
+    return 1;
+  } else if (symbol == SYM_SRL) {
+    return 1;
+  } else
+   return 0;
 }
 
 uint64_t is_factor() {
@@ -4990,14 +5031,14 @@ void compile_assignment(char* variable) {
   // assert: allocated_temporaries == 0
 }
 
-uint64_t compile_expression() {
+uint64_t compile_expression() {  
   uint64_t ltype;
   uint64_t operator_symbol;
   uint64_t rtype;
 
   // assert: n = allocated_temporaries
 
-  ltype = compile_arithmetic();
+  ltype = compile_shift();  // [bitwise-shift-compilation]
 
   // assert: allocated_temporaries == n + 1
 
@@ -5007,7 +5048,7 @@ uint64_t compile_expression() {
 
     get_symbol();
 
-    rtype = compile_arithmetic();
+    rtype = compile_shift();  // [bitwise-shift-compilation]
 
     // assert: allocated_temporaries == n + 2
 
@@ -5170,6 +5211,44 @@ uint64_t compile_term() {
       emit_divu(previous_temporary(), previous_temporary(), current_temporary());
     else if (operator_symbol == SYM_REMAINDER)
       emit_remu(previous_temporary(), previous_temporary(), current_temporary());
+
+    tfree(1);
+  }
+
+  // assert: allocated_temporaries == n + 1
+
+  // type of term is grammar attribute
+  return ltype;
+}
+
+uint64_t compile_shift() { // [bitwise-shift-compilation]
+  uint64_t ltype;
+  uint64_t operator_symbol;
+  uint64_t rtype;
+
+  // assert: n = allocated_temporaries
+
+  ltype = compile_arithmetic();
+
+  // assert: allocated_temporaries == n + 1
+
+  while (is_shift()) {  
+    operator_symbol = symbol;
+
+    get_symbol();  
+
+    rtype = compile_arithmetic();
+
+    // assert: allocated_temporaries == n + 2
+
+    if (ltype != rtype)
+      type_warning(ltype, rtype);
+
+    if (operator_symbol == SYM_SLL)
+      emit_sll(previous_temporary(), previous_temporary(), current_temporary());
+    else if (operator_symbol == SYM_SRL)
+      emit_srl(previous_temporary(), previous_temporary(), current_temporary());
+
 
     tfree(1);
   }
@@ -7146,6 +7225,18 @@ void emit_sltu(uint64_t rd, uint64_t rs1, uint64_t rs2) {
   ic_sltu = ic_sltu + 1;
 }
 
+void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compilation]
+  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); 
+
+  ic_sll = ic_sll + 1;
+}
+
+void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compilation]
+  emit_instruction(encode_r_format(F7_SRL, rs2, rs1, F3_SRL, rd, OP_OP)); 
+
+  ic_srl = ic_srl + 1;
+}
+
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate) {
   if (IS64BITTARGET)
     emit_instruction(encode_i_format(immediate, rs1, F3_LD, rd, OP_LOAD));
@@ -9014,6 +9105,54 @@ void do_add() {
   pc = pc + INSTRUCTIONSIZE;
 
   ic_add = ic_add + 1;
+}
+
+void do_sll() {
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) << *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_sll = nopc_sll + 1;
+  } else
+    nopc_sll = nopc_sll + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_sll = ic_sll + 1;
+}
+
+void do_srl() {
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) >> *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_srl = nopc_srl + 1;  
+  } else
+    nopc_srl = nopc_srl + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_srl = ic_srl + 1;
 }
 
 void do_sub() {

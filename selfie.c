@@ -722,6 +722,8 @@ uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
 
+uint64_t compile_shift(); // [bitwise-shift-arithmetic]
+
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
 void load_integer(uint64_t value);
@@ -5170,6 +5172,47 @@ uint64_t compile_term() {
       emit_divu(previous_temporary(), previous_temporary(), current_temporary());
     else if (operator_symbol == SYM_REMAINDER)
       emit_remu(previous_temporary(), previous_temporary(), current_temporary());
+
+    tfree(1);
+  }
+
+  // assert: allocated_temporaries == n + 1
+
+  // type of term is grammar attribute
+  return ltype;
+}
+
+uint64_t compile_shift() { // [bitwise-shift-compilation]
+  uint64_t ltype;
+  uint64_t operator_symbol;
+  uint64_t rtype;
+
+  // assert: n = allocated_temporaries
+
+  ltype = compile_arithmetic();
+
+  // assert: allocated_temporaries == n + 1
+
+  while (is_mult_or_div_or_rem()) {  // TODO: make is_shift()
+    operator_symbol = symbol;
+
+    get_symbol();  // TODO: change get_symbol()
+
+    rtype = compile_arithmetic();
+
+    // assert: allocated_temporaries == n + 2
+
+    if (ltype != rtype)
+      type_warning(ltype, rtype);
+
+    if (operator_symbol == SYM_ASTERISK)
+      emit_mul(previous_temporary(), previous_temporary(), current_temporary());
+    else if (operator_symbol == SYM_DIVISION)
+      emit_divu(previous_temporary(), previous_temporary(), current_temporary());
+    else if (operator_symbol == SYM_REMAINDER)
+      emit_remu(previous_temporary(), previous_temporary(), current_temporary());
+      // TODO: implement emit_sll, emit_srl
+
 
     tfree(1);
   }

@@ -1013,6 +1013,8 @@ uint64_t F3_SW    = 2; // 010
 uint64_t F3_BEQ   = 0; // 000
 uint64_t F3_JALR  = 0; // 000
 uint64_t F3_ECALL = 0; // 000
+uint64_t F3_SLL   = 1; // [bitwise-shift-compilation]
+uint64_t F3_SRL   = 5; // [bitwise-shift-compilation]
 
 // f7-codes
 uint64_t F7_ADD  = 0;  // 0000000
@@ -1021,6 +1023,8 @@ uint64_t F7_SUB  = 32; // 0100000
 uint64_t F7_DIVU = 1;  // 0000001
 uint64_t F7_REMU = 1;  // 0000001
 uint64_t F7_SLTU = 0;  // 0000000
+uint64_t F7_SLL  = 0;  // [bitwise-shift-compilation] according to https://www.cs.sfu.ca/~ashriram/Courses/CS295/assets/notebooks/RISCV/RISCV_CARD.pdf
+uint64_t F7_SRL  = 0;  // [bitwise-shift-compilation]
 
 // f12-codes (immediates)
 uint64_t F12_ECALL = 0; // 000000000000
@@ -1206,6 +1210,8 @@ uint64_t ic_beq   = 0;
 uint64_t ic_jal   = 0;
 uint64_t ic_jalr  = 0;
 uint64_t ic_ecall = 0;
+uint64_t ic_sll   = 0; // [bitwise-shift-compilation]
+uint64_t ic_srl   = 0; // [bitwise-shift-compilation]
 
 // data counters
 
@@ -5231,12 +5237,10 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
     if (ltype != rtype)
       type_warning(ltype, rtype);
 
-    if (operator_symbol == SYM_ASTERISK)
-      emit_mul(previous_temporary(), previous_temporary(), current_temporary());
-    else if (operator_symbol == SYM_DIVISION)
-      emit_divu(previous_temporary(), previous_temporary(), current_temporary());
-    else if (operator_symbol == SYM_REMAINDER)
-      emit_remu(previous_temporary(), previous_temporary(), current_temporary());
+    if (operator_symbol == SYM_SLL)
+      emit_sll(previous_temporary(), previous_temporary(), current_temporary());
+    else if (operator_symbol == SYM_SRL)
+      emit_srl(previous_temporary(), previous_temporary(), current_temporary());
       // TODO: implement emit_sll, emit_srl
 
 
@@ -7213,6 +7217,18 @@ void emit_sltu(uint64_t rd, uint64_t rs1, uint64_t rs2) {
   emit_instruction(encode_r_format(F7_SLTU, rs2, rs1, F3_SLTU, rd, OP_OP));
 
   ic_sltu = ic_sltu + 1;
+}
+
+void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compilation]
+  emit_instruction(encode_r_format(F7_SLTU, rs2, rs1, F3_SLTU, rd, OP_OP)); 
+
+  ic_sll = ic_sll + 1;
+}
+
+void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compilation]
+  emit_instruction(encode_r_format(F7_SLTU, rs2, rs1, F3_SLTU, rd, OP_OP)); 
+
+  ic_srl = ic_srl + 1;
 }
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate) {

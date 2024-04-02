@@ -1076,6 +1076,9 @@ void emit_divu(uint64_t rd, uint64_t rs1, uint64_t rs2);
 void emit_remu(uint64_t rd, uint64_t rs1, uint64_t rs2);
 void emit_sltu(uint64_t rd, uint64_t rs1, uint64_t rs2);
 
+void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
+void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
+
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate);
 void emit_store(uint64_t rs1, uint64_t immediate, uint64_t rs2);
 
@@ -5219,7 +5222,7 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
   while (is_shift()) {  
     operator_symbol = symbol;
 
-    get_symbol();  // TODO: change get_symbol()
+    get_symbol();  
 
     rtype = compile_arithmetic();
 

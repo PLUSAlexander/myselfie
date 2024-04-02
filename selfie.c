@@ -676,6 +676,8 @@ uint64_t is_mult_or_div_or_rem();
 uint64_t is_factor();
 uint64_t is_literal();
 
+uint64_t is_shift(); // [bitwise-shift-compilation]
+
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
 
@@ -4373,6 +4375,15 @@ uint64_t is_mult_or_div_or_rem() {
     return 0;
 }
 
+uint64_t is_shift() { // [bitwise-shift-compilation]
+  if (symbol == SYM_SLL) { // TODO: implement SYM_SLL, SYM_SRL
+    return 1;
+  } else if (symbol == SYM_SRL) {
+    return 1;
+  } else
+   return 0;
+}
+
 uint64_t is_factor() {
   if (symbol == SYM_LPARENTHESIS)
     return 1;
@@ -5193,7 +5204,7 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
 
   // assert: allocated_temporaries == n + 1
 
-  while (is_mult_or_div_or_rem()) {  // TODO: make is_shift()
+  while (is_shift()) {  // TODO: make is_shift()
     operator_symbol = symbol;
 
     get_symbol();  // TODO: change get_symbol()

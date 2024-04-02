@@ -460,14 +460,14 @@ uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
 uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
-uint64_t SYM_SRL;         = 35; // [bitwise-shift-compilation]
+uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 33; // const
+uint64_t SYM_CONST    = 36; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -538,6 +538,8 @@ void init_scanner () {
   *(SYMBOLS + SYM_GT)           = (uint64_t) ">";
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
+  *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "<<"; // [bitwise-shift-compilation]
+  *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) ">>"; // [bitwise-shift-compilation]
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
   *(SYMBOLS + SYM_CHAR)     = (uint64_t) "char";
@@ -9142,7 +9144,7 @@ void do_srl() {
     if (*(registers + rd) != next_rd_value)
       *(registers + rd) = next_rd_value;
     else
-      nopc_srl = nopc_srl + 1;
+      nopc_srl = nopc_srl + 1;  
   } else
     nopc_srl = nopc_srl + 1;
 

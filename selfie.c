@@ -459,6 +459,8 @@ uint64_t SYM_LEQ          = 26; // <=
 uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
+uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
+uint64_t SYM_SRL;         = 35; // [bitwise-shift-compilation]
 
 // symbols for bootstrapping
 
@@ -4062,7 +4064,12 @@ void get_symbol() {
           get_character();
 
           symbol = SYM_LEQ;
+        } else if (character == CHAR_LT) {
+          get_character();
+
+          symbol = SYM_SLL;
         } else
+
           symbol = SYM_LT;
       } else if (character == CHAR_GT) {
         get_character();
@@ -4071,7 +4078,12 @@ void get_symbol() {
           get_character();
 
           symbol = SYM_GEQ;
+        } else if (character == CHAR_GT) {
+          get_character();
+
+          symbol = SYM_SRL;
         } else
+
           symbol = SYM_GT;
       } else if (character == CHAR_DOT) {
         get_character();
@@ -4376,7 +4388,7 @@ uint64_t is_mult_or_div_or_rem() {
 }
 
 uint64_t is_shift() { // [bitwise-shift-compilation]
-  if (symbol == SYM_SLL) { // TODO: implement SYM_SLL, SYM_SRL
+  if (symbol == SYM_SLL) { 
     return 1;
   } else if (symbol == SYM_SRL) {
     return 1;
@@ -5204,7 +5216,7 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
 
   // assert: allocated_temporaries == n + 1
 
-  while (is_shift()) {  // TODO: make is_shift()
+  while (is_shift()) {  
     operator_symbol = symbol;
 
     get_symbol();  // TODO: change get_symbol()

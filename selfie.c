@@ -1265,6 +1265,8 @@ void reset_binary_counters() {
   ic_jal   = 0;
   ic_jalr  = 0;
   ic_ecall = 0;
+  ic_sll   = 0; // [bitwise-shift-execution]
+  ic_srl   = 0; // [bitwise-shift-execution]
 
   dc_global_variable = 0;
   dc_string          = 0;
@@ -1645,7 +1647,9 @@ uint64_t STORE = 10;
 uint64_t BEQ   = 11;
 uint64_t JAL   = 12;
 uint64_t JALR  = 13;
-uint64_t ECALL = 14;
+uint64_t ECALL = 16; // changed from 14 to 16 due to malloc error
+uint64_t SLL   = 14; // [bitwise-shift-execution]
+uint64_t SRL   = 15; // [bitwise-shift-execution]
 
 uint64_t* MNEMONICS; // assembly mnemonics of instructions
 
@@ -1687,6 +1691,8 @@ void init_disassembler() {
   *(MNEMONICS + DIVU)  = (uint64_t) "divu";
   *(MNEMONICS + REMU)  = (uint64_t) "remu";
   *(MNEMONICS + SLTU)  = (uint64_t) "sltu";
+  *(MNEMONICS + SLL)   = (uint64_t) "sll"; // [bitwise-shift-execution]
+  *(MNEMONICS + SRL)   = (uint64_t) "srl"; // [bitwise-shift-execution]
 
   reset_disassembler();
 
@@ -1924,6 +1930,8 @@ void reset_nop_counters() {
   nopc_beq   = 0;
   nopc_jal   = 0;
   nopc_jalr  = 0;
+  nopc_sll   = 0; // [bitwise-shift-execution]
+  nopc_srl   = 0; // [bitwise-shift-execution]
 }
 
 void reset_source_profile() {
@@ -7007,11 +7015,11 @@ void decode_u_format() {
 // -----------------------------------------------------------------
 
 uint64_t get_total_number_of_instructions() {
-  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall;
+  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl; // [bitwise-shift-execution]
 }
 
 uint64_t get_total_number_of_nops() {
-  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr;
+  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl;
 }
 
 void print_instruction_counter(uint64_t counter, uint64_t ins) {
@@ -7031,7 +7039,7 @@ void print_instruction_counter_with_nops(uint64_t counter, uint64_t nops, uint64
       percentage_format_fractional_2(counter, nops));
 }
 
-void print_instruction_counters() {
+void print_instruction_counters() {  
   printf("%s: --------------------------------------------------------------------------------\n", selfie_name);
   printf("%s: profile: instruction: total(ratio%%)", selfie_name);
   if (run) printf("[nops%%]");
@@ -7055,6 +7063,10 @@ void print_instruction_counters() {
   print_instruction_counter_with_nops(ic_sub, nopc_sub, SUB);
   printf(", ");
   print_instruction_counter_with_nops(ic_mul, nopc_mul, MUL);
+  printf(", ");
+  print_instruction_counter_with_nops(ic_sll, nopc_sll, SLL); // [bitwise-shift-execution]
+  printf(", ");
+  print_instruction_counter_with_nops(ic_srl, nopc_srl, SRL); // [bitwise-shift-execution]
   println();
 
   printf("%s: compute: ", selfie_name);
@@ -9107,7 +9119,7 @@ void do_add() {
   ic_add = ic_add + 1;
 }
 
-void do_sll() {
+void do_sll() {  // [bitwise-shift-compilation]
   uint64_t next_rd_value;
 
   read_register(rs1);
@@ -9131,7 +9143,7 @@ void do_sll() {
   ic_sll = ic_sll + 1;
 }
 
-void do_srl() {
+void do_srl() { // [bitwise-shift-compilation]
   uint64_t next_rd_value;
 
   read_register(rs1);
@@ -9774,7 +9786,7 @@ char* get_mnemonic(uint64_t ins) {
   return (char*) *(MNEMONICS + ins);
 }
 
-uint64_t print_instruction() {
+uint64_t print_instruction() {  // TODO: implement for SLL, SRL
   // assert: 1 <= is <= number of RISC-U instructions
   if (is == ADDI)
     return print_addi();
@@ -9794,6 +9806,10 @@ uint64_t print_instruction() {
     return print_add_sub_mul_divu_remu_sltu();
   else if (is == SLTU)
     return print_add_sub_mul_divu_remu_sltu();
+  else if (is == SLL)
+    return print_add_sub_mul_divu_remu_sltu(); // [bitwise-shift-execution]
+  else if (is == SRL)
+    return print_add_sub_mul_divu_remu_sltu(); // [bitwise-shift-execution]
   else if (is == BEQ)
     return print_beq();
   else if (is == JAL)
@@ -10089,13 +10105,19 @@ void decode() {
     } else if (funct3 == F3_DIVU) {
       if (funct7 == F7_DIVU)
         is = DIVU;
+      else if (funct7 == F7_SRL)
+        is = SRL; // [bitwise-shift-execution]
     } else if (funct3 == F3_REMU) {
       if (funct7 == F7_REMU)
         is = REMU;
     } else if (funct3 == F3_SLTU) {
       if (funct7 == F7_SLTU)
         is = SLTU;
+    } else if (funct3 == F3_SLL) {
+      if (funct7 == F7_SLL)
+        is = SLL; // [bitwise-shift-execution]
     }
+
   } else if (opcode == OP_BRANCH) {
     decode_b_format();
 
@@ -10175,12 +10197,16 @@ void execute() {
     do_lui();
   else if (is == ECALL)
     do_ecall();
+  else if (is == SLL)
+    do_sll(); // [bitwise-shift-execution]
+  else if (is == SRL)
+    do_srl(); // [bitwise-shift-execution]
 }
 
 void execute_record() {
   // assert: 1 <= is <= number of RISC-U instructions
   if (is == ADDI) {
-    record_lui_addi_add_sub_mul_divu_remu_sltu_jal_jalr();
+    record_lui_addi_add_sub_mul_divu_remu_sltu_jal_jalr();  // TODO: change for SLL and SRL
     do_addi();
   } else if (is == LOAD) {
     record_load();
@@ -10237,7 +10263,7 @@ void execute_undo() {
     undo_lui_addi_add_sub_mul_divu_remu_sltu_load_jal_jalr();
 }
 
-void execute_debug() {
+void execute_debug() { // TODO: change for SLL and SRL
   print_instruction();
 
   // assert: 1 <= is <= number of RISC-U instructions

@@ -7015,7 +7015,7 @@ void decode_u_format() {
 // -----------------------------------------------------------------
 
 uint64_t get_total_number_of_instructions() {
-  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl;
+  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl; // [bitwise-shift-execution]
 }
 
 uint64_t get_total_number_of_nops() {
@@ -9786,7 +9786,7 @@ char* get_mnemonic(uint64_t ins) {
   return (char*) *(MNEMONICS + ins);
 }
 
-uint64_t print_instruction() {
+uint64_t print_instruction() {  // TODO: implement for SLL, SRL
   // assert: 1 <= is <= number of RISC-U instructions
   if (is == ADDI)
     return print_addi();
@@ -9806,6 +9806,10 @@ uint64_t print_instruction() {
     return print_add_sub_mul_divu_remu_sltu();
   else if (is == SLTU)
     return print_add_sub_mul_divu_remu_sltu();
+  else if (is == SLL)
+    return print_add_sub_mul_divu_remu_sltu(); // [bitwise-shift-execution]
+  else if (is == SRL)
+    return print_add_sub_mul_divu_remu_sltu(); // [bitwise-shift-execution]
   else if (is == BEQ)
     return print_beq();
   else if (is == JAL)

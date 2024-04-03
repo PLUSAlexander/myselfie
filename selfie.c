@@ -7039,7 +7039,7 @@ void print_instruction_counter_with_nops(uint64_t counter, uint64_t nops, uint64
       percentage_format_fractional_2(counter, nops));
 }
 
-void print_instruction_counters() {  // TODO: add for SRL, SLL
+void print_instruction_counters() {  
   printf("%s: --------------------------------------------------------------------------------\n", selfie_name);
   printf("%s: profile: instruction: total(ratio%%)", selfie_name);
   if (run) printf("[nops%%]");
@@ -7063,6 +7063,10 @@ void print_instruction_counters() {  // TODO: add for SRL, SLL
   print_instruction_counter_with_nops(ic_sub, nopc_sub, SUB);
   printf(", ");
   print_instruction_counter_with_nops(ic_mul, nopc_mul, MUL);
+  printf(", ");
+  print_instruction_counter_with_nops(ic_sll, nopc_sll, SLL); // [bitwise-shift-execution]
+  printf(", ");
+  print_instruction_counter_with_nops(ic_srl, nopc_srl, SRL); // [bitwise-shift-execution]
   println();
 
   printf("%s: compute: ", selfie_name);
@@ -10097,13 +10101,19 @@ void decode() {
     } else if (funct3 == F3_DIVU) {
       if (funct7 == F7_DIVU)
         is = DIVU;
+      else if (funct7 == F7_SRL)
+        is = SRL; // [bitwise-shift-execution]
     } else if (funct3 == F3_REMU) {
       if (funct7 == F7_REMU)
         is = REMU;
     } else if (funct3 == F3_SLTU) {
       if (funct7 == F7_SLTU)
         is = SLTU;
+    } else if (funct3 == F3_SLL) {
+      if (funct7 == F7_SLL)
+        is = SLL; // [bitwise-shift-execution]
     }
+
   } else if (opcode == OP_BRANCH) {
     decode_b_format();
 

@@ -1265,6 +1265,8 @@ void reset_binary_counters() {
   ic_jal   = 0;
   ic_jalr  = 0;
   ic_ecall = 0;
+  ic_sll   = 0; // [bitwise-shift-execution]
+  ic_srl   = 0; // [bitwise-shift-execution]
 
   dc_global_variable = 0;
   dc_string          = 0;
@@ -1928,6 +1930,8 @@ void reset_nop_counters() {
   nopc_beq   = 0;
   nopc_jal   = 0;
   nopc_jalr  = 0;
+  nopc_sll   = 0; // [bitwise-shift-execution]
+  nopc_srl   = 0; // [bitwise-shift-execution]
 }
 
 void reset_source_profile() {
@@ -7011,11 +7015,11 @@ void decode_u_format() {
 // -----------------------------------------------------------------
 
 uint64_t get_total_number_of_instructions() {
-  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall;
+  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl;
 }
 
 uint64_t get_total_number_of_nops() {
-  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr;
+  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl;
 }
 
 void print_instruction_counter(uint64_t counter, uint64_t ins) {
@@ -7035,7 +7039,7 @@ void print_instruction_counter_with_nops(uint64_t counter, uint64_t nops, uint64
       percentage_format_fractional_2(counter, nops));
 }
 
-void print_instruction_counters() {
+void print_instruction_counters() {  // TODO: add for SRL, SLL
   printf("%s: --------------------------------------------------------------------------------\n", selfie_name);
   printf("%s: profile: instruction: total(ratio%%)", selfie_name);
   if (run) printf("[nops%%]");

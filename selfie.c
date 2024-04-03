@@ -1645,7 +1645,9 @@ uint64_t STORE = 10;
 uint64_t BEQ   = 11;
 uint64_t JAL   = 12;
 uint64_t JALR  = 13;
-uint64_t ECALL = 14;
+uint64_t ECALL = 16; // changed from 14 to 16 due to malloc error
+uint64_t SLL   = 14; // [bitwise-shift-execution]
+uint64_t SRL   = 15; // [bitwise-shift-execution]
 
 uint64_t* MNEMONICS; // assembly mnemonics of instructions
 
@@ -1687,6 +1689,8 @@ void init_disassembler() {
   *(MNEMONICS + DIVU)  = (uint64_t) "divu";
   *(MNEMONICS + REMU)  = (uint64_t) "remu";
   *(MNEMONICS + SLTU)  = (uint64_t) "sltu";
+  *(MNEMONICS + SLL)   = (uint64_t) "sll"; // [bitwise-shift-execution]
+  *(MNEMONICS + SRL)   = (uint64_t) "srl"; // [bitwise-shift-execution]
 
   reset_disassembler();
 
@@ -9107,7 +9111,7 @@ void do_add() {
   ic_add = ic_add + 1;
 }
 
-void do_sll() {
+void do_sll() {  // [bitwise-shift-compilation]
   uint64_t next_rd_value;
 
   read_register(rs1);
@@ -9131,7 +9135,7 @@ void do_sll() {
   ic_sll = ic_sll + 1;
 }
 
-void do_srl() {
+void do_srl() { // [bitwise-shift-compilation]
   uint64_t next_rd_value;
 
   read_register(rs1);
@@ -10175,12 +10179,16 @@ void execute() {
     do_lui();
   else if (is == ECALL)
     do_ecall();
+  else if (is == SLL)
+    do_sll(); // [bitwise-shift-execution]
+  else if (is == SRL)
+    do_srl(); // [bitwise-shift-execution]
 }
 
 void execute_record() {
   // assert: 1 <= is <= number of RISC-U instructions
   if (is == ADDI) {
-    record_lui_addi_add_sub_mul_divu_remu_sltu_jal_jalr();
+    record_lui_addi_add_sub_mul_divu_remu_sltu_jal_jalr();  // TODO: change for SLL and SRL
     do_addi();
   } else if (is == LOAD) {
     record_load();
@@ -10237,7 +10245,7 @@ void execute_undo() {
     undo_lui_addi_add_sub_mul_divu_remu_sltu_load_jal_jalr();
 }
 
-void execute_debug() {
+void execute_debug() { // TODO: change for SLL and SRL
   print_instruction();
 
   // assert: 1 <= is <= number of RISC-U instructions

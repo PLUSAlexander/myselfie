@@ -424,6 +424,8 @@ char CHAR_LT           = '<';
 char CHAR_GT           = '>';
 char CHAR_BACKSLASH    =  92; // ASCII code 92 = backslash
 char CHAR_DOT          = '.';
+char CHAR_AND          = '&'; // [bitwise-and-or-not]
+char CHAR_OR           = '|'; // [bitwise-and-or-not]
 
 uint64_t SYM_EOF = -1; // end of file
 
@@ -4061,6 +4063,14 @@ void get_symbol() {
         get_character();
 
         symbol = SYM_MINUS;
+      } else if (character == CHAR_AND) { // [bitwise-and-or-not]
+        get_character();
+
+        symbol = SYM_AND;
+      } else if (character == CHAR_OR) { // [bitwise-and-or-not]
+        get_character();
+
+        symbol = SYM_OR;
       } else if (character == CHAR_ASTERISK) {
         get_character();
 
@@ -4129,7 +4139,8 @@ void get_symbol() {
           syntax_error_expected_character(CHAR_DOT);
 
         symbol = SYM_ELLIPSIS;
-      } else {
+      }
+      else {
         print_line_number("syntax error", line_number);
         printf("found unknown character ");
         print_character(character);

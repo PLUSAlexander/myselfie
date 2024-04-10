@@ -1224,6 +1224,8 @@ uint64_t ic_jalr  = 0;
 uint64_t ic_ecall = 0;
 uint64_t ic_sll   = 0; // [bitwise-shift-compilation]
 uint64_t ic_srl   = 0; // [bitwise-shift-compilation]
+uint64_t ic_and   = 0; // [bitwise-and-or-not]
+uint64_t ic_or   = 0; // [bitwise-and-or-not]
 
 // data counters
 
@@ -1277,6 +1279,8 @@ void reset_binary_counters() {
   ic_ecall = 0;
   ic_sll   = 0; // [bitwise-shift-execution]
   ic_srl   = 0; // [bitwise-shift-execution]
+  ic_and   = 0; // [bitwise-and-or-not]
+  ic_or   = 0; // [bitwise-and-or-not]
 
   dc_global_variable = 0;
   dc_string          = 0;
@@ -7081,7 +7085,7 @@ void decode_u_format() {
 // -----------------------------------------------------------------
 
 uint64_t get_total_number_of_instructions() {
-  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl; // [bitwise-shift-execution]
+  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl + ic_and + ic_or; // [bitwise-shift-execution]
 }
 
 uint64_t get_total_number_of_nops() {
@@ -7318,13 +7322,13 @@ void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compi
 void emit_and(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
   emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_AND, F3_AND
 
-  ic_sll = ic_sll + 1; // TODO: implement ic_and
+  ic_and = ic_and + 1; 
 }
 
 void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
-  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_AND, F3_AND
+  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_OR, F3_OR
 
-  ic_sll = ic_sll + 1; // TODO: implement ic_and
+  ic_or = ic_or + 1; 
 }
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate) {

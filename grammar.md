@@ -55,7 +55,7 @@ statement  = assignment ";" | if | while | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
-expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift] .
+expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" | bitwise_aon_signs ) shift] .
 
 shift      = arithmetic [ ("<<" | ">>") arithmetic] .
 

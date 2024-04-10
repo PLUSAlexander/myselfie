@@ -461,13 +461,15 @@ uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
 uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
 uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
+uint64_t SYM_AND          = 36; // [bitwise-and-or-not]
+uint64_t SYM_OR           = 37; // [bitwise-and-or-not]
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 36; // const
+uint64_t SYM_CONST    = 38; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 

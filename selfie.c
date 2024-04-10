@@ -1025,6 +1025,8 @@ uint64_t F3_JALR  = 0; // 000
 uint64_t F3_ECALL = 0; // 000
 uint64_t F3_SLL   = 1; // [bitwise-shift-compilation]
 uint64_t F3_SRL   = 5; // [bitwise-shift-compilation]
+uint64_t F3_AND   = 7; // [bitwise-and-or-not]
+uint64_t F3_OR    = 6; // [bitwise-and-or-not]
 
 // f7-codes
 uint64_t F7_ADD  = 0;  // 0000000
@@ -1035,6 +1037,8 @@ uint64_t F7_REMU = 1;  // 0000001
 uint64_t F7_SLTU = 0;  // 0000000
 uint64_t F7_SLL  = 0;  // [bitwise-shift-compilation] according to https://www.cs.sfu.ca/~ashriram/Courses/CS295/assets/notebooks/RISCV/RISCV_CARD.pdf
 uint64_t F7_SRL  = 0;  // [bitwise-shift-compilation]
+uint64_t F7_AND  = 0;  // [bitwise-and-or-not]
+uint64_t F7_OR   = 0;  // [bitwise-and-or-not]
 
 // f12-codes (immediates)
 uint64_t F12_ECALL = 0; // 000000000000
@@ -1661,9 +1665,11 @@ uint64_t STORE = 10;
 uint64_t BEQ   = 11;
 uint64_t JAL   = 12;
 uint64_t JALR  = 13;
-uint64_t ECALL = 16; // changed from 14 to 16 due to malloc error
+uint64_t ECALL = 18; // changed from 14 to 18 due to malloc error
 uint64_t SLL   = 14; // [bitwise-shift-execution]
 uint64_t SRL   = 15; // [bitwise-shift-execution]
+uint64_t AND   = 16; // [bitwise-and-or-not]
+uint64_t OR    = 17; // [bitwise-and-or-not]
 
 uint64_t* MNEMONICS; // assembly mnemonics of instructions
 
@@ -1707,6 +1713,8 @@ void init_disassembler() {
   *(MNEMONICS + SLTU)  = (uint64_t) "sltu";
   *(MNEMONICS + SLL)   = (uint64_t) "sll"; // [bitwise-shift-execution]
   *(MNEMONICS + SRL)   = (uint64_t) "srl"; // [bitwise-shift-execution]
+  *(MNEMONICS + AND)   = (uint64_t) "and"; // [bitwise-and-or-not]
+  *(MNEMONICS + OR)    = (uint64_t) "or";  // [bitwise-and-or-not]
 
   reset_disassembler();
 
@@ -5323,9 +5331,9 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
       type_warning(ltype, rtype);
 
     if (operator_symbol == SYM_AND)
-      emit_sll(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_and
+      emit_and(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_and
     else if (operator_symbol == SYM_OR)
-      emit_srl(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_or
+      emit_or(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_or
 
 
     tfree(1);
@@ -7320,13 +7328,13 @@ void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compi
 }
 
 void emit_and(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
-  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_AND, F3_AND
+  emit_instruction(encode_r_format(F7_AND, rs2, rs1, F3_AND, rd, OP_OP)); 
 
   ic_and = ic_and + 1; 
 }
 
 void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
-  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_OR, F3_OR
+  emit_instruction(encode_r_format(F7_OR, rs2, rs1, F3_OR, rd, OP_OP)); 
 
   ic_or = ic_or + 1; 
 }
@@ -10192,12 +10200,18 @@ void decode() {
     } else if (funct3 == F3_REMU) {
       if (funct7 == F7_REMU)
         is = REMU;
+      else if (funct7 == F3_AND) {
+        is = AND; 
+      }
     } else if (funct3 == F3_SLTU) {
       if (funct7 == F7_SLTU)
         is = SLTU;
     } else if (funct3 == F3_SLL) {
       if (funct7 == F7_SLL)
         is = SLL; // [bitwise-shift-execution]
+    } else if (funct3 == F3_OR) {
+      if (funct7 == F7_OR)
+        is = OR;
     }
 
   } else if (opcode == OP_BRANCH) {

@@ -1608,8 +1608,8 @@ void do_remu();
 
 void do_sll(); // [bitwise-shift-compilation]
 void do_srl(); // [bitwise-shift-compilation]
-void do_and(); // [bitwise-and-or-not]
-void do_or();  // [bitwise-and-or-not]
+//void do_and(); // [bitwise-and-or-not]
+//void do_or();  // [bitwise-and-or-not]
 
 void do_sltu();
 

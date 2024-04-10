@@ -9267,53 +9267,6 @@ void do_srl() { // [bitwise-shift-compilation]
   ic_srl = ic_srl + 1;
 }
 
-void do_and() {  // [bitwise-and-or-not]
-  uint64_t next_rd_value;
-
-  read_register(rs1);
-  read_register(rs2);
-
-  if (rd != REG_ZR) {
-    // semantics of add
-    next_rd_value = *(registers + rs1) & *(registers + rs2);
-
-    if (*(registers + rd) != next_rd_value)
-      *(registers + rd) = next_rd_value;
-    else
-      nopc_and = nopc_and + 1;
-  } else
-    nopc_and = nopc_and + 1;
-
-  write_register(rd);
-
-  pc = pc + INSTRUCTIONSIZE;
-
-  ic_and = ic_and + 1;
-}
-
-void do_or() {  // [bitwise-and-or-not]
-  uint64_t next_rd_value;
-
-  read_register(rs1);
-  read_register(rs2);
-
-  if (rd != REG_ZR) {
-    // semantics of add
-    next_rd_value = *(registers + rs1) | *(registers + rs2);
-
-    if (*(registers + rd) != next_rd_value)
-      *(registers + rd) = next_rd_value;
-    else
-      nopc_or = nopc_or + 1;
-  } else
-    nopc_or = nopc_or + 1;
-
-  write_register(rd);
-
-  pc = pc + INSTRUCTIONSIZE;
-
-  ic_or = ic_or + 1;
-}
 
 void do_sub() {
   uint64_t next_rd_value;

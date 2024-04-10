@@ -1092,6 +1092,8 @@ void emit_sltu(uint64_t rd, uint64_t rs1, uint64_t rs2);
 
 void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
 void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
+void emit_and(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-and-or-not] 
+void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-and-or-not] 
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate);
 void emit_store(uint64_t rs1, uint64_t immediate, uint64_t rs2);
@@ -5307,7 +5309,7 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
   while (is_and_or_not()) {  
     operator_symbol = symbol;
 
-    get_symbol(); // TODO: modify 
+    get_symbol(); 
 
     rtype = compile_expression();
 
@@ -5317,9 +5319,9 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
       type_warning(ltype, rtype);
 
     if (operator_symbol == SYM_AND)
-      emit_sll(previous_temporary(), previous_temporary(), current_temporary());
+      emit_sll(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_and
     else if (operator_symbol == SYM_OR)
-      emit_srl(previous_temporary(), previous_temporary(), current_temporary());
+      emit_srl(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_or
 
 
     tfree(1);
@@ -7311,6 +7313,18 @@ void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-shift-compi
   emit_instruction(encode_r_format(F7_SRL, rs2, rs1, F3_SRL, rd, OP_OP)); 
 
   ic_srl = ic_srl + 1;
+}
+
+void emit_and(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
+  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_AND, F3_AND
+
+  ic_sll = ic_sll + 1; // TODO: implement ic_and
+}
+
+void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
+  emit_instruction(encode_r_format(F7_SLL, rs2, rs1, F3_SLL, rd, OP_OP)); // TODO: implement F7_AND, F3_AND
+
+  ic_sll = ic_sll + 1; // TODO: implement ic_and
 }
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate) {

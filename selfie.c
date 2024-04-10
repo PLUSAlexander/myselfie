@@ -1284,7 +1284,7 @@ void reset_binary_counters() {
   ic_sll   = 0; // [bitwise-shift-execution]
   ic_srl   = 0; // [bitwise-shift-execution]
   ic_and   = 0; // [bitwise-and-or-not]
-  ic_or   = 0; // [bitwise-and-or-not]
+  ic_or    = 0; // [bitwise-and-or-not]
 
   dc_global_variable = 0;
   dc_string          = 0;
@@ -1870,6 +1870,8 @@ uint64_t nopc_jal   = 0;
 uint64_t nopc_jalr  = 0;
 uint64_t nopc_sll   = 0; // [bitwise-shift-compilation]
 uint64_t nopc_srl   = 0; // [bitwise-shift-compilation]
+uint64_t nopc_and   = 0; // [bitwise-and-or-not]
+uint64_t nopc_or    = 0; // [bitwise-and-or-not]
 
 // source profile
 
@@ -4455,7 +4457,7 @@ uint64_t is_and_or_not() { // [bitwise-and-or-not]
   if (symbol == SYM_AND) {
     return 1;
   } else if (symbol == SYM_OR) {
-    return 1
+    return 1;
   } else
     return 0;  // TODO: implement for XOR!
 }
@@ -5331,9 +5333,9 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
       type_warning(ltype, rtype);
 
     if (operator_symbol == SYM_AND)
-      emit_and(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_and
+      emit_and(previous_temporary(), previous_temporary(), current_temporary()); 
     else if (operator_symbol == SYM_OR)
-      emit_or(previous_temporary(), previous_temporary(), current_temporary()); //TODO: implement emit_or
+      emit_or(previous_temporary(), previous_temporary(), current_temporary()); 
 
 
     tfree(1);
@@ -10201,7 +10203,7 @@ void decode() {
       if (funct7 == F7_REMU)
         is = REMU;
       else if (funct7 == F3_AND) {
-        is = AND; 
+        is = AND; // [bitwise-and-or-not]
       }
     } else if (funct3 == F3_SLTU) {
       if (funct7 == F7_SLTU)
@@ -10211,7 +10213,7 @@ void decode() {
         is = SLL; // [bitwise-shift-execution]
     } else if (funct3 == F3_OR) {
       if (funct7 == F7_OR)
-        is = OR;
+        is = OR; // [bitwise-and-or-not]
     }
 
   } else if (opcode == OP_BRANCH) {

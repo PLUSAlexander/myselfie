@@ -1608,6 +1608,8 @@ void do_remu();
 
 void do_sll(); // [bitwise-shift-compilation]
 void do_srl(); // [bitwise-shift-compilation]
+void do_and(); // [bitwise-and-or-not]
+void do_or();  // [bitwise-and-or-not]
 
 void do_sltu();
 
@@ -1956,6 +1958,8 @@ void reset_nop_counters() {
   nopc_jalr  = 0;
   nopc_sll   = 0; // [bitwise-shift-execution]
   nopc_srl   = 0; // [bitwise-shift-execution]
+  nopc_and   = 0; // [bitwise-and-or-not]
+  nopc_or    = 0; // [bitwise-and-or-not]
 }
 
 void reset_source_profile() {
@@ -7099,7 +7103,7 @@ uint64_t get_total_number_of_instructions() {
 }
 
 uint64_t get_total_number_of_nops() {
-  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl;
+  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl + nopc_and + nopc_or; // [bitwise-and-or-not]
 }
 
 void print_instruction_counter(uint64_t counter, uint64_t ins) {
@@ -7157,6 +7161,10 @@ void print_instruction_counters() {
 
   printf("%s: compare: ", selfie_name);
   print_instruction_counter_with_nops(ic_sltu, nopc_sltu, SLTU);
+  printf(", ");
+  print_instruction_counter_with_nops(ic_and, nopc_and, AND); // [bitwise-and-or-not]
+  printf(", ");
+  print_instruction_counter_with_nops(ic_or, nopc_or, OR); // [bitwise-and-or-not]
   println();
 
   printf("%s: control: ", selfie_name);
@@ -9257,6 +9265,54 @@ void do_srl() { // [bitwise-shift-compilation]
   pc = pc + INSTRUCTIONSIZE;
 
   ic_srl = ic_srl + 1;
+}
+
+void do_and() {  // [bitwise-and-or-not]
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) & *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_and = nopc_and + 1;
+  } else
+    nopc_and = nopc_and + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_and = ic_and + 1;
+}
+
+void do_or() {  // [bitwise-and-or-not]
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) | *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_or = nopc_or + 1;
+  } else
+    nopc_or = nopc_or + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_or = ic_or + 1;
 }
 
 void do_sub() {

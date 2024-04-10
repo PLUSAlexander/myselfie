@@ -27,8 +27,6 @@ identifier = letter { letter | digit | "_" } .
 and:
 
 ```
-bitwise_aon_signs = "&" | "|" | "~" .
-
 digit  = "0" | ... | "9" .
 
 letter = "a" | ... | "z" | "A" | ... | "Z" .
@@ -55,7 +53,11 @@ statement  = assignment ";" | if | while | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
-expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" | bitwise_aon_signs ) shift] .
+expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift] .
+
+bw_and_or  = expression [ ( "&" | "|" ) ] expression . 
+
+bw_not     = [ ( "~" ) ] expression . 
 
 shift      = arithmetic [ ("<<" | ">>") arithmetic] .
 

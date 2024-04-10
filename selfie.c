@@ -733,7 +733,8 @@ uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
 
-uint64_t compile_shift(); // [bitwise-shift-arithmetic]
+uint64_t compile_shift(); // [bitwise-shift-compilation]
+uint64_t compile_and_or(); // [bitwise-and-or-not]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -5269,6 +5270,44 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
     if (operator_symbol == SYM_SLL)
       emit_sll(previous_temporary(), previous_temporary(), current_temporary());
     else if (operator_symbol == SYM_SRL)
+      emit_srl(previous_temporary(), previous_temporary(), current_temporary());
+
+
+    tfree(1);
+  }
+
+  // assert: allocated_temporaries == n + 1
+
+  // type of term is grammar attribute
+  return ltype;
+}
+
+uint64_t compile_and_or() { // [bitwise-and-or-not]
+  uint64_t ltype;
+  uint64_t operator_symbol;
+  uint64_t rtype;
+
+  // assert: n = allocated_temporaries
+
+  ltype = compile_expression();
+
+  // assert: allocated_temporaries == n + 1
+
+  while (is_and_or_not()) {  
+    operator_symbol = symbol;
+
+    get_symbol(); // TODO: modify 
+
+    rtype = compile_expression();
+
+    // assert: allocated_temporaries == n + 2
+
+    if (ltype != rtype)
+      type_warning(ltype, rtype);
+
+    if (operator_symbol == SYM_AND)
+      emit_sll(previous_temporary(), previous_temporary(), current_temporary());
+    else if (operator_symbol == SYM_OR)
       emit_srl(previous_temporary(), previous_temporary(), current_temporary());
 
 

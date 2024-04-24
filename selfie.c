@@ -1103,7 +1103,7 @@ void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compil
 void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
 void emit_and(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-and-or-not] 
 void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-and-or-not] 
-//#TODO: emit_xori!!!
+void emit_xori(uint64_t rd, uint64_t rs1, uint64_t immediate); // [bitwise-and-or-not]
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate);
 void emit_store(uint64_t rs1, uint64_t immediate, uint64_t rs2);
@@ -7368,7 +7368,7 @@ void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
   ic_or = ic_or + 1; 
 }
 
-void emit_xori(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
+void emit_xori(uint64_t rd, uint64_t rs1, uint64_t immediate) { // [bitwise-and-or-not]
   emit_instruction(encode_r_format(immediate, rs1, F3_XORI, rd, OP_IMM)); 
 
   ic_xori = ic_xori + 1; 

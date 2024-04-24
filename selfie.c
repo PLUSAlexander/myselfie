@@ -5340,7 +5340,6 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
 
 uint64_t compile_and() { // [bitwise-and-or-not]
   uint64_t ltype;
-  uint64_t operator_symbol;
   uint64_t rtype;
 
   // assert: n = allocated_temporaries
@@ -5350,8 +5349,6 @@ uint64_t compile_and() { // [bitwise-and-or-not]
   // assert: allocated_temporaries == n + 1
 
   while (is_and()) {  
-    operator_symbol = symbol;
-
     get_symbol();  
 
     rtype = compile_expression();
@@ -5375,7 +5372,6 @@ uint64_t compile_and() { // [bitwise-and-or-not]
 
 uint64_t compile_or() { // [bitwise-and-or-not]
   uint64_t ltype;
-  uint64_t operator_symbol;
   uint64_t rtype;
 
   // assert: n = allocated_temporaries
@@ -5385,8 +5381,6 @@ uint64_t compile_or() { // [bitwise-and-or-not]
   // assert: allocated_temporaries == n + 1
 
   while (is_or()) {  
-    operator_symbol = symbol;
-
     get_symbol();  
 
     rtype = compile_and();
@@ -5550,6 +5544,15 @@ uint64_t compile_factor() {
     }
     // subtract from 0
     emit_sub(current_temporary(), REG_ZR, current_temporary());
+  }
+
+  if (not) { // [bitwise-and-or-not]
+    if (type != UINT64_T) {
+      type_warning(UINT64_T, type);
+
+      type = UINT64_T;
+    }
+    emit_xori(current_temporary(), current_temporary(), -1)
   }
 
   // assert: allocated_temporaries == n + 1

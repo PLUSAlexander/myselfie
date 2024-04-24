@@ -52,11 +52,11 @@ The parameter `imm` denotes a signed integer value represented by a fixed number
 
 #### bitwise and-or-not
 
-`and rd,rs1,rs2`: `rd = rs1 & rs2; pc = pc + 4`
+`and rd,rs1,rs2,`: `rd = rs1 & rs2`; `pc =pc + 4`
 
-`or rd,rs1,rs2`: `rd = rs1 | rs2; pc = pc + 4`
+`or rd,rs1,rs2,` : `rd = rs1 | rs2`; `pc =pc + 4`
 
-`xori rd,rs1,imm`: `rd = rs1 ^ imm; pc = pc + 4`
+`xori rd,rs1,imm,` : `rd = rs1 ^ imm`; `pc =pc + 4` with `-2^11 <= imm < 2^11`
 
 #### Comparison
 

@@ -53,11 +53,11 @@ statement  = assignment ";" | if | while | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
-expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift] .
+or_bitwise   = and_bitwise ["|" and_bitwise] .
 
-or_bw = and_bw ["|" and_bw] .
+and_bitwise  = expression ["&" expression] .
 
-and_bw = expression ["&" expression] .
+expression   = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 
 shift      = arithmetic [ ("<<" | ">>") arithmetic] .
 

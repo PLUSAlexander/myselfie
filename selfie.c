@@ -7369,11 +7369,13 @@ void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
   ic_or = ic_or + 1; 
 }
 
-void emit_xori(uint64_t rd, uint64_t rs1, uint64_t immediate) { // [bitwise-and-or-not]
-  emit_instruction(encode_i_format(immediate, rs1, F3_XORI, rd, OP_IMM)); 
+void emit_xori(uint64_t rd, uint64_t rs1, uint64_t immediate) { //[bitwise-and-or-not]
+  emit_instruction(encode_i_format(immediate, rs1, F3_XORI, rd, OP_IMM));
 
-  ic_xori = ic_xori + 1; 
+  ic_xori = ic_xori + 1;
 }
+
+
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate) {
   if (IS64BITTARGET)
@@ -9346,7 +9348,7 @@ void do_xori() { // [bitwise-and-or-not]
   uint64_t a;
   uint64_t b;
 
-  read_register_wrap(rs1, imm);
+  read_register_check_wrap(rs1, imm);
 
   if (rd != REG_ZR) {
     // semantics of xori

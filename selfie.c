@@ -10024,6 +10024,10 @@ uint64_t print_instruction() {  // TODO: implement for SLL, SRL
     return print_lui();
   else if (is == ECALL)
     return print_ecall();
+  else if (is == AND)
+    return print_add_sub_mul_divu_remu_sltu(); // [bitwise-and-or-not]
+  else if (is == OR)
+    return print_add_sub_mul_divu_remu_sltu(); // [bitwise-and-or-not]
   else
     return 0;
   //#TODO: implement for and, or, xori!!!

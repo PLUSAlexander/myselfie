@@ -55,9 +55,9 @@ assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
 expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift] .
 
-bw_and_or  = expression [ ( "&" | "|" ) ] expression . 
+or_bw = and_bw ["|" and_bw] .
 
-bw_not     = [ ( "~" ) ] expression . 
+and_bw = expression ["&" expression] .
 
 shift      = arithmetic [ ("<<" | ">>") arithmetic] .
 

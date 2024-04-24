@@ -5381,6 +5381,7 @@ uint64_t compile_factor() {
   uint64_t negative;
   uint64_t dereference;
   char* variable_or_procedure;
+  uint64_t not; // [bitwise-and-or-not]
 
   // assert: n = allocated_temporaries
 
@@ -5431,6 +5432,13 @@ uint64_t compile_factor() {
     get_symbol();
   } else
     dereference = 0;
+
+  if (symbol == SYM_NOT) { // [bitwise-and-or-not]
+    not = 1;
+
+    get_symbol();
+  } else
+    not = 0;
 
   if (symbol == SYM_SIZEOF) {
     // "sizeof" "(" type ")"
@@ -10036,7 +10044,6 @@ uint64_t print_instruction() {  // TODO: implement for SLL, SRL
     return print_add_sub_mul_divu_remu_sltu(); // [bitwise-and-or-not]
   else
     return 0;
-  //#TODO: implement for and, or, xori!!!
 }
 
 void selfie_disassemble(uint64_t verbose) {

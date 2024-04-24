@@ -1043,7 +1043,6 @@ uint64_t F7_SLL  = 0;  // [bitwise-shift-compilation] according to https://www.c
 uint64_t F7_SRL  = 0;  // [bitwise-shift-compilation]
 uint64_t F7_AND  = 0;  // [bitwise-and-or-not]
 uint64_t F7_OR   = 0;  // [bitwise-and-or-not]
-uint64_t F7_XORI = 0;  // [bitwise-and-or-not]
 
 // f12-codes (immediates)
 uint64_t F12_ECALL = 0; // 000000000000
@@ -1616,9 +1615,9 @@ void do_remu();
 
 void do_sll(); // [bitwise-shift-compilation]
 void do_srl(); // [bitwise-shift-compilation]
-//void do_and(); // [bitwise-and-or-not]
-//void do_or();  // [bitwise-and-or-not]
-//#TODO: implement do_xori!!!
+void do_and(); // [bitwise-and-or-not]
+void do_or();  // [bitwise-and-or-not]
+void do_xori(): // [bitwise-and-or-not]
 
 void do_sltu();
 
@@ -7118,11 +7117,11 @@ void decode_u_format() {
 // -----------------------------------------------------------------
 
 uint64_t get_total_number_of_instructions() {
-  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl + ic_and + ic_or; // [bitwise-shift-execution]
+  return ic_lui + ic_addi + ic_add + ic_sub + ic_mul + ic_divu + ic_remu + ic_sltu + ic_load + ic_store + ic_beq + ic_jal + ic_jalr + ic_ecall + ic_sll + ic_srl + ic_and + ic_or + ic_xori; // [bitwise-shift-execution]
 }
 
 uint64_t get_total_number_of_nops() {
-  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl + nopc_and + nopc_or; // [bitwise-and-or-not]
+  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl + nopc_and + nopc_or + nopc_xori; // [bitwise-and-or-not]
 }
 
 void print_instruction_counter(uint64_t counter, uint64_t ins) {
@@ -7184,6 +7183,8 @@ void print_instruction_counters() {
   print_instruction_counter_with_nops(ic_and, nopc_and, AND); // [bitwise-and-or-not]
   printf(", ");
   print_instruction_counter_with_nops(ic_or, nopc_or, OR); // [bitwise-and-or-not]
+  printf(", ");
+  print_instruction_counter_with_nops(ic_xori, nopc_xori, XORI); // [bitwise-and-or-not]
   println();
 
   printf("%s: control: ", selfie_name);
@@ -7369,7 +7370,7 @@ void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
 }
 
 void emit_xori(uint64_t rd, uint64_t rs1, uint64_t immediate) { // [bitwise-and-or-not]
-  emit_instruction(encode_r_format(immediate, rs1, F3_XORI, rd, OP_IMM)); 
+  emit_instruction(encode_i_format(immediate, rs1, F3_XORI, rd, OP_IMM)); 
 
   ic_xori = ic_xori + 1; 
 }
@@ -9292,6 +9293,54 @@ void do_srl() { // [bitwise-shift-compilation]
   ic_srl = ic_srl + 1;
 }
 
+void do_and() { // [bitwise-and-or-not]
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) & *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_and = nopc_and + 1;  
+  } else
+    nopc_and = nopc_and + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_and = ic_and + 1;
+}
+
+void do_or() { // [bitwise-and-or-not]
+  uint64_t next_rd_value;
+
+  read_register(rs1);
+  read_register(rs2);
+
+  if (rd != REG_ZR) {
+    // semantics of add
+    next_rd_value = *(registers + rs1) | *(registers + rs2);
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_or = nopc_or + 1;  
+  } else
+    nopc_or = nopc_or + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_or = ic_or + 1;
+}
+
 
 void do_sub() {
   uint64_t next_rd_value;
@@ -9948,6 +9997,7 @@ uint64_t print_instruction() {  // TODO: implement for SLL, SRL
     return print_ecall();
   else
     return 0;
+  //#TODO: implement for and, or, xori!!!
 }
 
 void selfie_disassemble(uint64_t verbose) {
@@ -10335,6 +10385,11 @@ void execute() {
     do_sll(); // [bitwise-shift-execution]
   else if (is == SRL)
     do_srl(); // [bitwise-shift-execution]
+  else if (is == AND)
+    do_and(); // [bitwise-and-or-not]
+  else if (is == OR)
+    do_or(); // [bitwise-and-or-not]
+  //#TODO: implement for do_xori()
 }
 
 void execute_record() {

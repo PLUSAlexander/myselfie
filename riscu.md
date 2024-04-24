@@ -56,7 +56,7 @@ The parameter `imm` denotes a signed integer value represented by a fixed number
 
 `or rd,rs1,rs2`: `rd = rs1 | rs2; pc = pc + 4`
 
-`xori rd,rs1,rs2`: `rd = rs1 ~ rs2; pc = pc + 4`
+`xori rd,rs1,imm`: `rd = rs1 ~ imm; pc = pc + 4`
 
 #### Comparison
 

@@ -426,6 +426,7 @@ char CHAR_BACKSLASH    =  92; // ASCII code 92 = backslash
 char CHAR_DOT          = '.';
 char CHAR_AND          = '&'; // [bitwise-and-or-not]
 char CHAR_OR           = '|'; // [bitwise-and-or-not]
+char CHAR_TILDE        = '~'; // [bitwise-and-or-not]
 
 uint64_t SYM_EOF = -1; // end of file
 
@@ -465,13 +466,14 @@ uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
 uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
 uint64_t SYM_AND          = 36; // [bitwise-and-or-not]
 uint64_t SYM_OR           = 37; // [bitwise-and-or-not]
+uint64_t SYM_NOT          = 38; // [bitwise-and-or-not]
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 38; // const
+uint64_t SYM_CONST    = 39; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -546,6 +548,7 @@ void init_scanner () {
   *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation]
   *(SYMBOLS + SYM_AND)          = (uint64_t) "&"; // [bitwise-and-or-not]
   *(SYMBOLS + SYM_OR)           = (uint64_t) "|"; // [bitwise-and-or-not]
+  *(SYMBOLS + SYM_NOT)          = (uint64_t) "~"; // [bitwise-and-or-not]     
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
   *(SYMBOLS + SYM_CHAR)     = (uint64_t) "char";
@@ -1027,6 +1030,7 @@ uint64_t F3_SLL   = 1; // [bitwise-shift-compilation]
 uint64_t F3_SRL   = 5; // [bitwise-shift-compilation]
 uint64_t F3_AND   = 7; // [bitwise-and-or-not]
 uint64_t F3_OR    = 6; // [bitwise-and-or-not]
+uint64_t F3_XORI  = 4; // [bitwise-and-or-not]
 
 // f7-codes
 uint64_t F7_ADD  = 0;  // 0000000
@@ -1039,6 +1043,7 @@ uint64_t F7_SLL  = 0;  // [bitwise-shift-compilation] according to https://www.c
 uint64_t F7_SRL  = 0;  // [bitwise-shift-compilation]
 uint64_t F7_AND  = 0;  // [bitwise-and-or-not]
 uint64_t F7_OR   = 0;  // [bitwise-and-or-not]
+uint64_t F7_XORI = 0;  // [bitwise-and-or-not]
 
 // f12-codes (immediates)
 uint64_t F12_ECALL = 0; // 000000000000
@@ -1098,6 +1103,7 @@ void emit_sll(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compil
 void emit_srl(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-shift-compilation]
 void emit_and(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-and-or-not] 
 void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2); // [bitwise-and-or-not] 
+//#TODO: emit_xori!!!
 
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate);
 void emit_store(uint64_t rs1, uint64_t immediate, uint64_t rs2);
@@ -1229,7 +1235,8 @@ uint64_t ic_ecall = 0;
 uint64_t ic_sll   = 0; // [bitwise-shift-compilation]
 uint64_t ic_srl   = 0; // [bitwise-shift-compilation]
 uint64_t ic_and   = 0; // [bitwise-and-or-not]
-uint64_t ic_or   = 0; // [bitwise-and-or-not]
+uint64_t ic_or    = 0; // [bitwise-and-or-not]
+uint64_t ic_xori  = 0; // [bitwise-and-or-not]
 
 // data counters
 
@@ -1285,6 +1292,7 @@ void reset_binary_counters() {
   ic_srl   = 0; // [bitwise-shift-execution]
   ic_and   = 0; // [bitwise-and-or-not]
   ic_or    = 0; // [bitwise-and-or-not]
+  ic_xori  = 0; // [bitwise-and-or-not]
 
   dc_global_variable = 0;
   dc_string          = 0;
@@ -1610,6 +1618,7 @@ void do_sll(); // [bitwise-shift-compilation]
 void do_srl(); // [bitwise-shift-compilation]
 //void do_and(); // [bitwise-and-or-not]
 //void do_or();  // [bitwise-and-or-not]
+//#TODO: implement do_xori!!!
 
 void do_sltu();
 
@@ -1667,11 +1676,12 @@ uint64_t STORE = 10;
 uint64_t BEQ   = 11;
 uint64_t JAL   = 12;
 uint64_t JALR  = 13;
-uint64_t ECALL = 18; // changed from 14 to 18 due to malloc error
+uint64_t ECALL = 19; // changed from 14 to 19 due to malloc error
 uint64_t SLL   = 14; // [bitwise-shift-execution]
 uint64_t SRL   = 15; // [bitwise-shift-execution]
 uint64_t AND   = 16; // [bitwise-and-or-not]
 uint64_t OR    = 17; // [bitwise-and-or-not]
+uint64_t XORI  = 18; // [bitwise-and-or-not]
 
 uint64_t* MNEMONICS; // assembly mnemonics of instructions
 
@@ -1717,6 +1727,7 @@ void init_disassembler() {
   *(MNEMONICS + SRL)   = (uint64_t) "srl"; // [bitwise-shift-execution]
   *(MNEMONICS + AND)   = (uint64_t) "and"; // [bitwise-and-or-not]
   *(MNEMONICS + OR)    = (uint64_t) "or";  // [bitwise-and-or-not]
+  *(MNEMONICS + XORI)  = (uint64_t) "xori"; // [bitwise-and-or-not]
 
   reset_disassembler();
 
@@ -1874,6 +1885,7 @@ uint64_t nopc_sll   = 0; // [bitwise-shift-compilation]
 uint64_t nopc_srl   = 0; // [bitwise-shift-compilation]
 uint64_t nopc_and   = 0; // [bitwise-and-or-not]
 uint64_t nopc_or    = 0; // [bitwise-and-or-not]
+uint64_t nopc_xori  = 0; // [bitwise-and-or-not]
 
 // source profile
 
@@ -1960,6 +1972,7 @@ void reset_nop_counters() {
   nopc_srl   = 0; // [bitwise-shift-execution]
   nopc_and   = 0; // [bitwise-and-or-not]
   nopc_or    = 0; // [bitwise-and-or-not]
+  nopc_xori  = 0; // [bitwise-and-or-not]
 }
 
 void reset_source_profile() {
@@ -4091,6 +4104,10 @@ void get_symbol() {
         get_character();
 
         symbol = SYM_OR;
+      } else if (character == CHAR_TILDE) { // [bitwise-and-or-not]
+        get_character();
+
+        symbol = SYM_NOT;
       } else if (character == CHAR_ASTERISK) {
         get_character();
 
@@ -4463,7 +4480,7 @@ uint64_t is_and_or_not() { // [bitwise-and-or-not]
   } else if (symbol == SYM_OR) {
     return 1;
   } else
-    return 0;  // TODO: implement for XOR!
+    return 0;  //#TODO: implement for XOR!
 }
 
 uint64_t is_factor() {
@@ -4478,6 +4495,8 @@ uint64_t is_factor() {
   else if (is_literal())
     return 1;
   else if (symbol == SYM_IDENTIFIER)
+    return 1;
+  else if (symbol == SYM_NOT) // [bitwise-and-or-not]
     return 1;
   else
     return 0;
@@ -7349,6 +7368,12 @@ void emit_or(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
   ic_or = ic_or + 1; 
 }
 
+void emit_xori(uint64_t rd, uint64_t rs1, uint64_t rs2) { // [bitwise-and-or-not]
+  emit_instruction(encode_r_format(immediate, rs1, F3_XORI, rd, OP_IMM)); 
+
+  ic_xori = ic_xori + 1; 
+}
+
 void emit_load(uint64_t rd, uint64_t rs1, uint64_t immediate) {
   if (IS64BITTARGET)
     emit_instruction(encode_i_format(immediate, rs1, F3_LD, rd, OP_LOAD));
@@ -10177,6 +10202,8 @@ void decode() {
 
     if (funct3 == F3_ADDI)
       is = ADDI;
+    if (funct3 == F3_XORI)
+      is = XORI; // [bitwise-and-or-not]
   } else if (opcode == OP_LOAD) {
     decode_i_format();
 

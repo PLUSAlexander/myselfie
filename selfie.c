@@ -1617,7 +1617,7 @@ void do_sll(); // [bitwise-shift-compilation]
 void do_srl(); // [bitwise-shift-compilation]
 void do_and(); // [bitwise-and-or-not]
 void do_or();  // [bitwise-and-or-not]
-void do_xori(): // [bitwise-and-or-not]
+void do_xori(); // [bitwise-and-or-not]
 
 void do_sltu();
 
@@ -9341,6 +9341,33 @@ void do_or() { // [bitwise-and-or-not]
   ic_or = ic_or + 1;
 }
 
+void do_xori() { // [bitwise-and-or-not]
+  uint64_t next_rd_value;
+  uint64_t a;
+  uint64_t b;
+
+  read_register_wrap(rs1, imm);
+
+  if (rd != REG_ZR) {
+    // semantics of xori
+    a = *(registers + rs1);
+    b = imm;
+    next_rd_value = ((~a) & b) | (a & (~b));
+
+    if (*(registers + rd) != next_rd_value)
+      *(registers + rd) = next_rd_value;
+    else
+      nopc_xori = nopc_xori + 1;  
+  } else
+    nopc_xori = nopc_xori + 1;
+
+  write_register(rd);
+
+  pc = pc + INSTRUCTIONSIZE;
+
+  ic_xori = ic_xori + 1;
+}
+
 
 void do_sub() {
   uint64_t next_rd_value;
@@ -10389,7 +10416,8 @@ void execute() {
     do_and(); // [bitwise-and-or-not]
   else if (is == OR)
     do_or(); // [bitwise-and-or-not]
-  //#TODO: implement for do_xori()
+  else if (is == XORI)
+    do_xori(); // [bitwise-and-or-not]
 }
 
 void execute_record() {

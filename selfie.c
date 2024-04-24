@@ -740,7 +740,8 @@ uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
 
 uint64_t compile_shift(); // [bitwise-shift-compilation]
-uint64_t compile_and_or(); // [bitwise-and-or-not]
+uint64_t compile_and(); // [bitwise-and-or-not]
+uint64_t compile_or(); // [bitwise-and-or-not]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -5337,7 +5338,7 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
   return ltype;
 }
 
-uint64_t compile_and_or() { // [bitwise-and-or-not]
+uint64_t compile_and() { // [bitwise-and-or-not]
   uint64_t ltype;
   uint64_t operator_symbol;
   uint64_t rtype;
@@ -5348,10 +5349,10 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
 
   // assert: allocated_temporaries == n + 1
 
-  while (is_and_or_not()) {  
+  while (is_and()) {  
     operator_symbol = symbol;
 
-    get_symbol(); 
+    get_symbol();  
 
     rtype = compile_expression();
 
@@ -5360,12 +5361,8 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
     if (ltype != rtype)
       type_warning(ltype, rtype);
 
-    if (operator_symbol == SYM_AND)
-      emit_and(previous_temporary(), previous_temporary(), current_temporary()); 
-    else if (operator_symbol == SYM_OR)
-      emit_or(previous_temporary(), previous_temporary(), current_temporary()); 
-
-
+    emit_and(previous_temporary(), previous_temporary(), current_temporary());
+    
     tfree(1);
   }
 
@@ -5373,6 +5370,42 @@ uint64_t compile_and_or() { // [bitwise-and-or-not]
 
   // type of term is grammar attribute
   return ltype;
+  
+}
+
+uint64_t compile_or() { // [bitwise-and-or-not]
+  uint64_t ltype;
+  uint64_t operator_symbol;
+  uint64_t rtype;
+
+  // assert: n = allocated_temporaries
+
+  ltype = compile_and();
+
+  // assert: allocated_temporaries == n + 1
+
+  while (is_or()) {  
+    operator_symbol = symbol;
+
+    get_symbol();  
+
+    rtype = compile_and();
+
+    // assert: allocated_temporaries == n + 2
+
+    if (ltype != rtype)
+      type_warning(ltype, rtype);
+
+    emit_or(previous_temporary(), previous_temporary(), current_temporary());
+    
+    tfree(1);
+  }
+
+  // assert: allocated_temporaries == n + 1
+
+  // type of term is grammar attribute
+  return ltype;
+  
 }
 
 uint64_t compile_factor() {

@@ -690,7 +690,8 @@ uint64_t is_factor();
 uint64_t is_literal();
 
 uint64_t is_shift(); // [bitwise-shift-compilation]
-uint64_t is_and_or_not(); //[bitwise-and-or-not]
+uint64_t is_and(); //[bitwise-and-or-not]
+uint64_t is_or(); // [bitwise-and-or-not]
 
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
@@ -4473,13 +4474,18 @@ uint64_t is_shift() { // [bitwise-shift-compilation]
    return 0;
 }
 
-uint64_t is_and_or_not() { // [bitwise-and-or-not]
+uint64_t is_and() { // [bitwise-and-or-not]
   if (symbol == SYM_AND) {
     return 1;
-  } else if (symbol == SYM_OR) {
+  } else
+    return 0;
+}
+
+uint64_t is_or() { // [bitwise-and-or-not]
+  if (symbol == SYM_OR) {
     return 1;
   } else
-    return 0;  //#TODO: implement for XOR!
+    return 0;
 }
 
 uint64_t is_factor() {

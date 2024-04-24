@@ -5358,6 +5358,12 @@ uint64_t compile_and() { // [bitwise-and-or-not]
     if (ltype != rtype)
       type_warning(ltype, rtype);
 
+    if (ltype != UINT64_T)
+      type_warning(UINT64_T, ltype);
+
+    if (rtype != UINT64_T)
+      type_warning(UINT64_T, rtype);
+
     emit_and(previous_temporary(), previous_temporary(), current_temporary());
     
     tfree(1);
@@ -5389,6 +5395,12 @@ uint64_t compile_or() { // [bitwise-and-or-not]
 
     if (ltype != rtype)
       type_warning(ltype, rtype);
+
+    if (ltype != UINT64_T)
+      type_warning(UINT64_T, ltype);
+
+    if (rtype != UINT64_T)
+      type_warning(UINT64_T, rtype);
 
     emit_or(previous_temporary(), previous_temporary(), current_temporary());
     
@@ -5552,7 +5564,7 @@ uint64_t compile_factor() {
 
       type = UINT64_T;
     }
-    emit_xori(current_temporary(), current_temporary(), -1)
+    emit_xori(current_temporary(), current_temporary(), -1);
   }
 
   // assert: allocated_temporaries == n + 1
@@ -9401,10 +9413,17 @@ void do_xori() { // [bitwise-and-or-not]
   read_register_check_wrap(rs1, imm);
 
   if (rd != REG_ZR) {
-    // semantics of xori
-    a = *(registers + rs1);
-    b = imm;
-    next_rd_value = ((~a) & b) | (a & (~b));
+
+    if (imm == UINT64_MAX) {
+      // semantic of not pseudo instruction
+      next_rd_value = ~(*(registers + rs1));
+    }
+    else {
+      // semantics of xori
+      a = *(registers + rs1);
+      b = imm;
+      next_rd_value = ((~a) & b) | (a & (~b));
+    }
 
     if (*(registers + rd) != next_rd_value)
       *(registers + rd) = next_rd_value;

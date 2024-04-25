@@ -538,8 +538,9 @@ void init_scanner () {
   *(SYMBOLS + SYM_GT)           = (uint64_t) ">";
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
-  *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "<<"; // [bitwise-shift-compilation]
-  *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) ">>"; // [bitwise-shift-compilation]
+  *(SYMBOLS + SYM_SLL)          = (uint64_t) "<<"; // [bitwise-shift-compilation]
+  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation]    
+
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
   *(SYMBOLS + SYM_CHAR)     = (uint64_t) "char";
@@ -728,7 +729,7 @@ uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type
 
-uint64_t compile_shift(); // [bitwise-shift-arithmetic]
+uint64_t compile_shift(); // [bitwise-shift-compilation]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -1647,7 +1648,7 @@ uint64_t STORE = 10;
 uint64_t BEQ   = 11;
 uint64_t JAL   = 12;
 uint64_t JALR  = 13;
-uint64_t ECALL = 16; // changed from 14 to 16 due to malloc error
+uint64_t ECALL = 20; // changed from 14 to 19 due to malloc error
 uint64_t SLL   = 14; // [bitwise-shift-execution]
 uint64_t SRL   = 15; // [bitwise-shift-execution]
 
@@ -4123,7 +4124,8 @@ void get_symbol() {
           syntax_error_expected_character(CHAR_DOT);
 
         symbol = SYM_ELLIPSIS;
-      } else {
+      }
+      else {
         print_line_number("syntax error", line_number);
         printf("found unknown character ");
         print_character(character);
@@ -5266,6 +5268,7 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
   // type of term is grammar attribute
   return ltype;
 }
+
 
 uint64_t compile_factor() {
   uint64_t cast;
@@ -7019,7 +7022,7 @@ uint64_t get_total_number_of_instructions() {
 }
 
 uint64_t get_total_number_of_nops() {
-  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl;
+  return nopc_lui + nopc_addi + nopc_add + nopc_sub + nopc_mul + nopc_divu + nopc_remu + nopc_sltu + nopc_load + nopc_store + nopc_beq + nopc_jal + nopc_jalr + nopc_sll + nopc_srl; // [bitwise-and-or-not]
 }
 
 void print_instruction_counter(uint64_t counter, uint64_t ins) {
@@ -10107,7 +10110,8 @@ void decode() {
         is = DIVU;
       else if (funct7 == F7_SRL)
         is = SRL; // [bitwise-shift-execution]
-    } else if (funct3 == F3_REMU) {
+    } 
+    else if (funct3 == F3_REMU) {
       if (funct7 == F7_REMU)
         is = REMU;
     } else if (funct3 == F3_SLTU) {
@@ -10116,7 +10120,7 @@ void decode() {
     } else if (funct3 == F3_SLL) {
       if (funct7 == F7_SLL)
         is = SLL; // [bitwise-shift-execution]
-    }
+    } 
 
   } else if (opcode == OP_BRANCH) {
     decode_b_format();
@@ -10247,7 +10251,7 @@ void execute_record() {
   } else if (is == ECALL) {
     record_ecall();
     do_ecall();
-  }
+  } 
 }
 
 void execute_undo() {

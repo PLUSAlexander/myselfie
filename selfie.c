@@ -688,9 +688,6 @@ uint64_t is_factor();
 uint64_t is_literal();
 
 uint64_t is_shift(); // [bitwise-shift-compilation]
-uint64_t is_and(); // [logical-and-or-not]
-uint64_t is_or(); // [logical-and-or-not]
-uint64_t is_not(); // [logical-and-or-not]
 
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
@@ -736,7 +733,7 @@ void compile_assignment(char* variable);
 uint64_t compile_expression(); // returns type
 uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
-uint64_t compile_factor();     // returns type
+uint64_t compile_factor();     // returns type #TODO: implement for !
 
 uint64_t compile_shift(); // [bitwise-shift-compilation]
 
@@ -4431,22 +4428,10 @@ uint64_t is_shift() { // [bitwise-shift-compilation]
    return 0;
 }
 
-uint64_t is_and() { // [logical-and-or-not]
-  if (symbol == SYM_AND) 
+uint64_t is_bool() {
+  if (symbol == SYM_AND)
     return 1;
-  else
-    return 0;
-}
-
-uint64_t is_or() { // [logical-and-or-not]
-  if (symbol == SYM_OR) 
-    return 1;
-  else
-    return 0;
-}
-
-uint64_t is_not() { // [logical-and-or-not]
-  if (symbol == SYM_NOT) 
+  else if (symbol == SYM_OR)
     return 1;
   else
     return 0;
@@ -5298,7 +5283,6 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
   // type of term is grammar attribute
   return ltype;
 }
-
 
 uint64_t compile_factor() {
   uint64_t cast;

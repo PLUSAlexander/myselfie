@@ -57,6 +57,12 @@ or_bitwise   = and_bitwise ["|" and_bitwise] .
 
 and_bitwise  = expression ["&" expression] .
 
+logical_or = logical_and "||" logical_and . 
+
+logical_and  = bool "&&" bool . 
+
+bool = expression "==" | "!=" expression .
+
 expression   = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 
 shift      = arithmetic [ ("<<" | ">>") arithmetic] .

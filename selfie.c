@@ -461,13 +461,16 @@ uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
 uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
 uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
+uint64_t SYM_AND          = 36; // [logical-and-or-not] &&
+uint64_t SYM_OR           = 37; // [logical-and-or-not] ||
+uint64_t SYM_NOT          = 38; // [logical-and-or-not] !
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 36; // const
+uint64_t SYM_CONST    = 38; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -539,7 +542,10 @@ void init_scanner () {
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
   *(SYMBOLS + SYM_SLL)          = (uint64_t) "<<"; // [bitwise-shift-compilation]
-  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation]    
+  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation] 
+  *(SYMBOLS + SYM_AND)          = (uint64_t) "&&"; // [logical-and-or-not]    
+  *(SYMBOLS + SYM_OR)           = (uint64_t) "||"; // [logical-and-or-not]  
+  *(SYMBOLS + SYM_NOT)          = (uint64_t) "!"; // [logical-and-or-not]  
 
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -682,6 +688,9 @@ uint64_t is_factor();
 uint64_t is_literal();
 
 uint64_t is_shift(); // [bitwise-shift-compilation]
+uint64_t is_and(); // [logical-and-or-not]
+uint64_t is_or(); // [logical-and-or-not]
+uint64_t is_not(); // [logical-and-or-not]
 
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
@@ -4420,6 +4429,27 @@ uint64_t is_shift() { // [bitwise-shift-compilation]
     return 1;
   } else
    return 0;
+}
+
+uint64_t is_and() { // [logical-and-or-not]
+  if (symbol == SYM_AND) 
+    return 1;
+  else
+    return 0;
+}
+
+uint64_t is_or() { // [logical-and-or-not]
+  if (symbol == SYM_OR) 
+    return 1;
+  else
+    return 0;
+}
+
+uint64_t is_not() { // [logical-and-or-not]
+  if (symbol == SYM_NOT) 
+    return 1;
+  else
+    return 0;
 }
 
 uint64_t is_factor() {

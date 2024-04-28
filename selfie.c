@@ -424,6 +424,8 @@ char CHAR_LT           = '<';
 char CHAR_GT           = '>';
 char CHAR_BACKSLASH    =  92; // ASCII code 92 = backslash
 char CHAR_DOT          = '.';
+char CHAR_AND_SIGN     = '&'; // [logical-and-or-not]
+char CHAR_VBAR         = '|'; // [logical-and-or-not]
 
 uint64_t SYM_EOF = -1; // end of file
 
@@ -4082,12 +4084,15 @@ void get_symbol() {
       } else if (character == CHAR_EXCLAMATION) {
         get_character();
 
-        if (character == CHAR_EQUAL)
+        if (character == CHAR_EQUAL) {
           get_character();
-        else
-          syntax_error_expected_character(CHAR_EQUAL);
 
-        symbol = SYM_NOTEQ;
+          symbol = SYM_NOTEQ;
+        } else
+          symbol = SYM_NOT;  // [logical-and-or-not]
+
+        //syntax_error_expected_character(CHAR_EQUAL);
+        //symbol = SYM_NOTEQ;
       } else if (character == CHAR_LT) {
         get_character();
 
@@ -4098,7 +4103,7 @@ void get_symbol() {
         } else if (character == CHAR_LT) {
           get_character();
 
-          symbol = SYM_SLL;
+          symbol = SYM_SLL;  // [bitwise-shift-compilation]
         } else
 
           symbol = SYM_LT;
@@ -4112,7 +4117,7 @@ void get_symbol() {
         } else if (character == CHAR_GT) {
           get_character();
 
-          symbol = SYM_SRL;
+          symbol = SYM_SRL; // [bitwise-shift-compilation]
         } else
 
           symbol = SYM_GT;
@@ -4130,7 +4135,27 @@ void get_symbol() {
           syntax_error_expected_character(CHAR_DOT);
 
         symbol = SYM_ELLIPSIS;
-      }
+      } else if (character == CHAR_AND_SIGN) { // [logical-and-or-not]
+        get_character();
+
+          if (character == CHAR_AND_SIGN) {
+            get_character();
+
+            symbol = SYM_AND;
+          } else
+            syntax_error_expected_character(CHAR_AND_SIGN);
+      } else if (character == CHAR_VBAR) { // [logical-and-or-not]
+        get_character();
+
+          if (character == CHAR_VBAR) {
+            get_character();
+
+            symbol = SYM_OR;
+          } else
+            syntax_error_expected_character(CHAR_VBAR);
+      } 
+
+
       else {
         print_line_number("syntax error", line_number);
         printf("found unknown character ");

@@ -424,6 +424,8 @@ char CHAR_LT           = '<';
 char CHAR_GT           = '>';
 char CHAR_BACKSLASH    =  92; // ASCII code 92 = backslash
 char CHAR_DOT          = '.';
+char CHAR_KAUFMANN_UND = '&'; // [logical-and-or-not]
+char CHAR_VBAR         = '|'; // [logical-and-or-not]
 
 uint64_t SYM_EOF = -1; // end of file
 
@@ -461,13 +463,16 @@ uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
 uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
 uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
+uint64_t SYM_LOG_AND      = 36; // [logical-and-or-not] &&
+uint64_t SYM_LOG_OR       = 37; // [logical-and-or-not] ||
+uint64_t SYM_LOG_NOT      = 38; // [logical-and-or-not] !
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 36; // const
+uint64_t SYM_CONST    = 38; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -539,7 +544,10 @@ void init_scanner () {
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
   *(SYMBOLS + SYM_SLL)          = (uint64_t) "<<"; // [bitwise-shift-compilation]
-  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation]    
+  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation]  
+  *(SYMBOLS + SYM_LOG_AND)      = (uint64_t) "&&"; // [logical-and-or-not]
+  *(SYMBOLS + SYM_LOG_OR)       = (uint64_t) "||"; // [logical-and-or-not]
+  *(SYMBOLS + SYM_LOG_NOT)      = (uint64_t) "!"; // [logical-and-or-not]
 
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -4076,12 +4084,15 @@ void get_symbol() {
       } else if (character == CHAR_EXCLAMATION) {
         get_character();
 
-        if (character == CHAR_EQUAL)
+        if (character == CHAR_EQUAL) {
           get_character();
-        else
-          syntax_error_expected_character(CHAR_EQUAL);
 
-        symbol = SYM_NOTEQ;
+          symbol = SYM_NOTEQ;
+        } else
+          symbol = SYM_LOG_NOT; // [logical-and-or-not]
+    
+        //syntax_error_expected_character(CHAR_EQUAL);
+        //symbol = SYM_NOTEQ;
       } else if (character == CHAR_LT) {
         get_character();
 
@@ -4092,7 +4103,7 @@ void get_symbol() {
         } else if (character == CHAR_LT) {
           get_character();
 
-          symbol = SYM_SLL;
+          symbol = SYM_SLL; // [bitwise-shift-compilation]
         } else
 
           symbol = SYM_LT;
@@ -4106,7 +4117,7 @@ void get_symbol() {
         } else if (character == CHAR_GT) {
           get_character();
 
-          symbol = SYM_SRL;
+          symbol = SYM_SRL; // [bitwise-shift-compilation]
         } else
 
           symbol = SYM_GT;
@@ -4124,8 +4135,25 @@ void get_symbol() {
           syntax_error_expected_character(CHAR_DOT);
 
         symbol = SYM_ELLIPSIS;
-      }
-      else {
+      } else if (character == CHAR_KAUFMANN_UND) {
+        get_character();
+
+        if (character == CHAR_KAUFMANN_UND) {
+          get_character();
+
+          symbol = SYM_LOG_AND; // [logical-and-or-not]
+        } else
+          syntax_error_expected_character(CHAR_KAUFMANN_UND);
+      } else if (character == CHAR_VBAR) {
+        get_character();
+
+        if (character == CHAR_VBAR) {
+          get_character();
+
+          symbol = SYM_LOG_OR; // [logical-and-or-not]
+        } else
+          syntax_error_expected_character(CHAR_VBAR);
+      } else {
         print_line_number("syntax error", line_number);
         printf("found unknown character ");
         print_character(character);

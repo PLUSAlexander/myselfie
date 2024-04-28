@@ -4484,6 +4484,8 @@ uint64_t is_factor() {
     return 1;
   else if (symbol == SYM_IDENTIFIER)
     return 1;
+  else if (symbol == SYM_LOG_NOT) // [logical-and-or-not]
+    return 1;
   else
     return 0;
 }
@@ -5409,6 +5411,7 @@ uint64_t compile_factor() {
   uint64_t type;
   uint64_t negative;
   uint64_t dereference;
+  uint64_t not;
   char* variable_or_procedure;
 
   // assert: n = allocated_temporaries
@@ -5460,6 +5463,13 @@ uint64_t compile_factor() {
     get_symbol();
   } else
     dereference = 0;
+
+  if (symbol == SYM_LOG_NOT) { // [logical-and-or-not]
+    not = 1; 
+
+    get_symbol();
+  } else
+    not = 0;
 
   if (symbol == SYM_SIZEOF) {
     // "sizeof" "(" type ")"
@@ -5538,6 +5548,11 @@ uint64_t compile_factor() {
     }
     // subtract from 0
     emit_sub(current_temporary(), REG_ZR, current_temporary());
+  }
+
+  if (not) { // [logical-and-or-not]
+      emit_addi(next_temporary(), REG_ZR, 1);
+      emit_sltu(current_temporary(), current_temporary(), next_temporary());
   }
 
   // assert: allocated_temporaries == n + 1

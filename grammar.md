@@ -53,15 +53,9 @@ statement  = assignment ";" | if | while | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
-or_bitwise   = and_bitwise ["|" and_bitwise] .
-
-and_bitwise  = expression ["&" expression] .
-
 logical_or = logical_and "||" logical_and . 
 
-logical_and  = bool "&&" bool . 
-
-bool = expression "==" | "!=" expression .
+logical_and  = expression "&&" expression . 
 
 expression   = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 

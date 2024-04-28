@@ -53,7 +53,7 @@ statement  = assignment ";" | if | while | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
-logical_or = logical_and "||" logical_and . 
+logical_or = logical_and { "||" logical_and } . 
 
 logical_and  = expression "&&" expression . 
 

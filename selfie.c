@@ -461,18 +461,18 @@ uint64_t SYM_LEQ          = 26; // <=
 uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
-uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation]
-uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation]
-uint64_t SYM_AND          = 36; // [logical-and-or-not] &&
-uint64_t SYM_OR           = 37; // [logical-and-or-not] ||
-uint64_t SYM_NOT          = 38; // [logical-and-or-not] !
+uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation] <<
+uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation] >>
+uint64_t SYM_LOG_AND      = 36; // [logical-and-or-not] &&
+uint64_t SYM_LOG_OR       = 37; // [logical-and-or-not] ||
+uint64_t SYM_LOG_NOT      = 38; // [logical-and-or-not] !
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 38; // const
+uint64_t SYM_CONST    = 39; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -545,9 +545,9 @@ void init_scanner () {
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
   *(SYMBOLS + SYM_SLL)          = (uint64_t) "<<"; // [bitwise-shift-compilation]
   *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation] 
-  *(SYMBOLS + SYM_AND)          = (uint64_t) "&&"; // [logical-and-or-not]    
-  *(SYMBOLS + SYM_OR)           = (uint64_t) "||"; // [logical-and-or-not]  
-  *(SYMBOLS + SYM_NOT)          = (uint64_t) "!"; // [logical-and-or-not]  
+  *(SYMBOLS + SYM_LOG_AND)      = (uint64_t) "&&"; // [logical-and-or-not]    
+  *(SYMBOLS + SYM_LOG_OR)       = (uint64_t) "||"; // [logical-and-or-not]  
+  *(SYMBOLS + SYM_LOG_NOT)      = (uint64_t) "!"; // [logical-and-or-not]  
 
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -690,6 +690,7 @@ uint64_t is_factor();
 uint64_t is_literal();
 
 uint64_t is_shift(); // [bitwise-shift-compilation]
+uint64_t is_logical(); // [logical-and-or-not]
 
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
@@ -735,9 +736,10 @@ void compile_assignment(char* variable);
 uint64_t compile_expression(); // returns type
 uint64_t compile_arithmetic(); // returns type
 uint64_t compile_term();       // returns type
-uint64_t compile_factor();     // returns type #TODO: implement for !
+uint64_t compile_factor();     // returns type 
 
 uint64_t compile_shift(); // [bitwise-shift-compilation]
+uint64_t compile_logical(); // [logical-and-or-not]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -4089,7 +4091,7 @@ void get_symbol() {
 
           symbol = SYM_NOTEQ;
         } else
-          symbol = SYM_NOT;  // [logical-and-or-not]
+          symbol = SYM_LOG_NOT;  // [logical-and-or-not]
 
         //syntax_error_expected_character(CHAR_EQUAL);
         //symbol = SYM_NOTEQ;
@@ -4141,7 +4143,7 @@ void get_symbol() {
           if (character == CHAR_AND_SIGN) {
             get_character();
 
-            symbol = SYM_AND;
+            symbol = SYM_LOG_AND;
           } else
             syntax_error_expected_character(CHAR_AND_SIGN);
       } else if (character == CHAR_VBAR) { // [logical-and-or-not]
@@ -4150,7 +4152,7 @@ void get_symbol() {
           if (character == CHAR_VBAR) {
             get_character();
 
-            symbol = SYM_OR;
+            symbol = SYM_LOG_OR;
           } else
             syntax_error_expected_character(CHAR_VBAR);
       } 
@@ -4453,13 +4455,15 @@ uint64_t is_shift() { // [bitwise-shift-compilation]
    return 0;
 }
 
-uint64_t is_bool() {
-  if (symbol == SYM_AND)
+uint64_t is_logical() { // [logical-and-or-not]
+  if (symbol == SYM_LOG_AND) {
     return 1;
-  else if (symbol == SYM_OR)
+  } else if (symbol == SYM_LOG_OR) {
     return 1;
-  else
-    return 0;
+  } else if (symbol == SYM_LOG_NOT) {
+    return 1;
+  } else
+  return 0;
 }
 
 uint64_t is_factor() {
@@ -5306,6 +5310,57 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
   // assert: allocated_temporaries == n + 1
 
   // type of term is grammar attribute
+  return ltype;
+}
+
+uint64_t compile_logical() { // [logical-and-or-not]  
+  uint64_t ltype;
+  uint64_t operator_symbol;
+  uint64_t rtype;
+
+  // assert: n = allocated_temporaries
+
+  ltype = compile_expression();  
+
+  // assert: allocated_temporaries == n + 1
+
+  //optional: ==, !=, <, >, <=, >= simple_expression
+  if (is_logical()) {
+    operator_symbol = symbol;
+
+    get_symbol();
+
+    rtype = compile_expression(); 
+
+    // assert: allocated_temporaries == n + 2
+
+    if (ltype != rtype)
+      type_warning(ltype, rtype);
+
+    // for lack of boolean type
+    //ltype = UINT64_T;
+
+    if (operator_symbol == SYM_LOG_AND) {
+      emit_add(previous_temporary(), current_temporary(), previous_temporary());  // add 1 + 1
+      emit_addi(current_temporary(), REG_ZR, 1);
+      emit_sltu(previous_temporary(), current_temporary(), previous_temporary()); // 1 < 2
+
+      tfree (1);
+
+    } else if (operator_symbol == SYM_LOG_OR) {
+      emit_add(previous_temporary(), current_temporary(), previous_temporary()); // only 0 + 0 will evaluate to 0, hence 0 < 0 --> F, T otherwise
+      emit_addi(current_temporary(), REG_ZR, 0);
+      emit_sltu(previous_temporary(), current_temporary(), previous_temporary());
+
+      tfree(1);
+
+    } 
+
+  }
+
+  // assert: allocated_temporaries == n + 1
+
+  // type of expression is grammar attribute
   return ltype;
 }
 

@@ -65,7 +65,7 @@ arithmetic = term { ( "+" | "-" ) term } .
 
 term       = factor { ( "*" | "/" | "%" ) factor } .
 
-factor     = [ cast ] [ "-" ] [ "*" ] ["~"]
+factor     = [ cast ] [ "-" ] [ "*" ] ["!"]
              ( "sizeof" "(" type ")" | literal | identifier | call | "(" logical_or ")" ) .
 
 literal    = value | string .

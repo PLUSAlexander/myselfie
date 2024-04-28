@@ -5032,7 +5032,7 @@ void compile_assignment(char* variable) {
       get_symbol();
 
       // load expression value (as address)
-      ltype = compile_expression();
+      ltype = compile_log_or(); // [logical-and-or-not]
 
       get_expected_symbol(SYM_RPARENTHESIS);
     } else {
@@ -5066,7 +5066,7 @@ void compile_assignment(char* variable) {
         ltype = UINT64_T;
     }
 
-    rtype = compile_expression();
+    rtype = compile_log_or(); // [logical-and-or-not]
 
     if (ltype != rtype)
       type_warning(ltype, rtype);
@@ -5433,7 +5433,7 @@ uint64_t compile_factor() {
       cast = compile_cast(UNDECLARED_T);
     else {
       // not a cast but: "(" expression ")"
-      type = compile_expression();
+      type = compile_log_or(); // [logical-and-or-not]
 
       get_expected_symbol(SYM_RPARENTHESIS);
 
@@ -5509,7 +5509,7 @@ uint64_t compile_factor() {
     // "(" expression ")"
     get_symbol();
 
-    type = compile_expression();
+    type = compile_log_or(); // [logical-and-or-not]
 
     get_expected_symbol(SYM_RPARENTHESIS);
   } else {
@@ -5686,7 +5686,7 @@ void compile_if() {
       // "if" "(" expression ")"
       get_symbol();
 
-      compile_expression();
+      compile_log_or(); // [logical-and-or-not]
 
       // if the "if" condition is false we skip the true case
       // by branching to "else" (if provided)
@@ -5774,7 +5774,7 @@ void compile_while() {
     if (symbol == SYM_LPARENTHESIS) {
       get_symbol();
 
-      compile_expression();
+      compile_log_or(); // [logical-and-or-not]
 
       // if the "while" condition is false
       // we skip the "while" body by branching to the end
@@ -6194,7 +6194,7 @@ uint64_t compile_call(char* procedure) {
 
   if (is_expression()) {
     // try parsing first actual parameter
-    compile_expression();
+    compile_log_or(); // [logical-and-or-not]
 
     // TODO: check if types of actual and formal parameters match
 
@@ -6215,7 +6215,7 @@ uint64_t compile_call(char* procedure) {
       // try parsing next actual parameter
       get_symbol();
 
-      compile_expression();
+      compile_log_or(); // [logical-and-or-not]
 
       // push next actual parameter onto stack in reverse (!) order
       emit_store(REG_SP, number_of_actual_parameters * WORDSIZE, current_temporary());
@@ -6282,7 +6282,7 @@ void compile_return() {
 
   // optional: expression
   if (symbol != SYM_SEMICOLON) {
-    type = compile_expression();
+    type = compile_log_or(); // [logical-and-or-not]
 
     if (type != return_type)
       type_warning(return_type, type);

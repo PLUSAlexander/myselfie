@@ -53,15 +53,9 @@ statement  = assignment ";" | if | while | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" logical_or ")" ) "=" logical_or .
 
-<<<<<<< HEAD
-logical_or = logical_and { "||" logical_and } .
-
-logical_and = expression { "&&" expression } .
-=======
 logical_or = logical_and { "||" logical_and } . 
 
 logical_and  = expression "&&" expression . 
->>>>>>> developmentbranch_logicalAndOrNot
 
 expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 

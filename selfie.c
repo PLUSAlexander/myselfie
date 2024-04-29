@@ -424,8 +424,6 @@ char CHAR_LT           = '<';
 char CHAR_GT           = '>';
 char CHAR_BACKSLASH    =  92; // ASCII code 92 = backslash
 char CHAR_DOT          = '.';
-char CHAR_AND_SIGN     = '&'; // [logical-and-or-not]
-char CHAR_VBAR         = '|'; // [logical-and-or-not]
 
 uint64_t SYM_EOF = -1; // end of file
 
@@ -463,9 +461,6 @@ uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
 uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation] <<
 uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation] >>
-uint64_t SYM_LOG_AND      = 36; // [logical-and-or-not] &&
-uint64_t SYM_LOG_OR       = 37; // [logical-and-or-not] ||
-uint64_t SYM_LOG_NOT      = 38; // [logical-and-or-not] !
 
 // symbols for bootstrapping
 
@@ -544,10 +539,7 @@ void init_scanner () {
   *(SYMBOLS + SYM_GEQ)          = (uint64_t) ">=";
   *(SYMBOLS + SYM_ELLIPSIS)     = (uint64_t) "...";
   *(SYMBOLS + SYM_SLL)          = (uint64_t) "<<"; // [bitwise-shift-compilation]
-  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation] 
-  *(SYMBOLS + SYM_LOG_AND)      = (uint64_t) "&&"; // [logical-and-or-not]    
-  *(SYMBOLS + SYM_LOG_OR)       = (uint64_t) "||"; // [logical-and-or-not]  
-  *(SYMBOLS + SYM_LOG_NOT)      = (uint64_t) "!"; // [logical-and-or-not]  
+  *(SYMBOLS + SYM_SRL)          = (uint64_t) ">>"; // [bitwise-shift-compilation]  
 
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -690,8 +682,6 @@ uint64_t is_factor();
 uint64_t is_literal();
 
 uint64_t is_shift(); // [bitwise-shift-compilation]
-uint64_t is_log_and(); // [logical-and-or-not]
-uint64_t is_log_or(); // [logical-and-or-not]
 
 uint64_t is_neither_rbrace_nor_eof();
 uint64_t is_possibly_parameter(uint64_t is_already_variadic);
@@ -740,8 +730,6 @@ uint64_t compile_term();       // returns type
 uint64_t compile_factor();     // returns type 
 
 uint64_t compile_shift(); // [bitwise-shift-compilation]
-uint64_t compile_log_and(); // [logical-and-or-not]
-uint64_t compile_log_or(); // [logical-and-or-not]
 
 void load_small_and_medium_integer(uint64_t reg, uint64_t value);
 void load_big_integer(uint64_t value);
@@ -4093,9 +4081,9 @@ void get_symbol() {
 
           symbol = SYM_NOTEQ;
         } else
-          symbol = SYM_LOG_NOT;  // [logical-and-or-not]
+          
 
-        //syntax_error_expected_character(CHAR_EQUAL);
+        syntax_error_expected_character(CHAR_EQUAL);
         //symbol = SYM_NOTEQ;
       } else if (character == CHAR_LT) {
         get_character();
@@ -4139,25 +4127,8 @@ void get_symbol() {
           syntax_error_expected_character(CHAR_DOT);
 
         symbol = SYM_ELLIPSIS;
-      } else if (character == CHAR_AND_SIGN) { // [logical-and-or-not]
-        get_character();
-
-          if (character == CHAR_AND_SIGN) {
-            get_character();
-
-            symbol = SYM_LOG_AND;
-          } else
-            syntax_error_expected_character(CHAR_AND_SIGN);
-      } else if (character == CHAR_VBAR) { // [logical-and-or-not]
-        get_character();
-
-          if (character == CHAR_VBAR) {
-            get_character();
-
-            symbol = SYM_LOG_OR;
-          } else
-            syntax_error_expected_character(CHAR_VBAR);
-      } 
+      }  
+      
 
 
       else {
@@ -4457,20 +4428,6 @@ uint64_t is_shift() { // [bitwise-shift-compilation]
    return 0;
 }
 
-uint64_t is_log_and() { // [logical-and-or-not]
-  if (symbol == SYM_LOG_AND) {
-    return 1;
-  } else
-    return 0;
-}
-
-uint64_t is_log_or() { // [logical-and-or-not]
-  if (symbol == SYM_LOG_OR) {
-    return 1;
-  } else
-    return 0;
-}
-
 uint64_t is_factor() {
   if (symbol == SYM_LPARENTHESIS)
     return 1;
@@ -4483,8 +4440,6 @@ uint64_t is_factor() {
   else if (is_literal())
     return 1;
   else if (symbol == SYM_IDENTIFIER)
-    return 1;
-  else if (symbol == SYM_LOG_NOT) // [logical-and-or-not]
     return 1;
   else
     return 0;
@@ -5034,7 +4989,7 @@ void compile_assignment(char* variable) {
       get_symbol();
 
       // load expression value (as address)
-      ltype = compile_log_or(); // [logical-and-or-not]
+      ltype = compile_expression(); 
 
       get_expected_symbol(SYM_RPARENTHESIS);
     } else {
@@ -5068,7 +5023,7 @@ void compile_assignment(char* variable) {
         ltype = UINT64_T;
     }
 
-    rtype = compile_log_or(); // [logical-and-or-not]
+    rtype = compile_expression(); 
 
     if (ltype != rtype)
       type_warning(ltype, rtype);
@@ -5320,98 +5275,11 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
   return ltype;
 }
 
-uint64_t compile_log_and() { // [logical-and-or-not]  
-  uint64_t ltype;
-  uint64_t operator_symbol;
-  uint64_t rtype;
-
-  // assert: n = allocated_temporaries
-
-  ltype = compile_expression();  
-
-  // assert: allocated_temporaries == n + 1
-
-
-  while (is_log_and()) {
-    operator_symbol = symbol;
-
-    get_symbol();
-
-    rtype = compile_expression(); 
-
-    // assert: allocated_temporaries == n + 2
-
-    if (ltype != rtype)
-      type_warning(ltype, rtype);
-
-    // for lack of boolean type
-    //ltype = UINT64_T;
-
-    if (operator_symbol == SYM_LOG_AND) {
-      emit_add(previous_temporary(), current_temporary(), previous_temporary());  // add 1 + 1
-      emit_addi(current_temporary(), REG_ZR, 1);
-      emit_sltu(previous_temporary(), current_temporary(), previous_temporary()); // 1 < 2
-
-      tfree (1);
-    }  
-
-  }
-
-  // assert: allocated_temporaries == n + 1
-
-  // type of expression is grammar attribute
-  return ltype;
-}
-
-uint64_t compile_log_or() { // [logical-and-or-not]  
-  uint64_t ltype;
-  uint64_t operator_symbol;
-  uint64_t rtype;
-
-  // assert: n = allocated_temporaries
-
-  ltype = compile_log_and();  
-
-  // assert: allocated_temporaries == n + 1
-
-
-  while (is_log_or()) {
-    operator_symbol = symbol;
-
-    get_symbol();
-
-    rtype = compile_log_and(); 
-
-    // assert: allocated_temporaries == n + 2
-
-    if (ltype != rtype)
-      type_warning(ltype, rtype);
-
-    // for lack of boolean type
-    //ltype = UINT64_T;
-
-    if (operator_symbol == SYM_LOG_OR) {
-      emit_add(previous_temporary(), current_temporary(), previous_temporary()); // only 0 + 0 will evaluate to 0, hence 0 < 0 --> F, T otherwise
-      emit_addi(current_temporary(), REG_ZR, 0);
-      emit_sltu(previous_temporary(), current_temporary(), previous_temporary());
-
-      tfree(1);
-    }
-
-  }
-
-  // assert: allocated_temporaries == n + 1
-
-  // type of expression is grammar attribute
-  return ltype;
-}
-
 uint64_t compile_factor() {
   uint64_t cast;
   uint64_t type;
   uint64_t negative;
   uint64_t dereference;
-  uint64_t not;
   char* variable_or_procedure;
 
   // assert: n = allocated_temporaries
@@ -5436,7 +5304,7 @@ uint64_t compile_factor() {
       cast = compile_cast(UNDECLARED_T);
     else {
       // not a cast but: "(" expression ")"
-      type = compile_log_or(); // [logical-and-or-not]
+      type = compile_expression(); 
 
       get_expected_symbol(SYM_RPARENTHESIS);
 
@@ -5463,13 +5331,6 @@ uint64_t compile_factor() {
     get_symbol();
   } else
     dereference = 0;
-
-  if (symbol == SYM_LOG_NOT) { // [logical-and-or-not]
-    not = 1; 
-
-    get_symbol();
-  } else
-    not = 0;
 
   if (symbol == SYM_SIZEOF) {
     // "sizeof" "(" type ")"
@@ -5519,7 +5380,7 @@ uint64_t compile_factor() {
     // "(" expression ")"
     get_symbol();
 
-    type = compile_log_or(); // [logical-and-or-not]
+    type = compile_expression(); 
 
     get_expected_symbol(SYM_RPARENTHESIS);
   } else {
@@ -5548,11 +5409,6 @@ uint64_t compile_factor() {
     }
     // subtract from 0
     emit_sub(current_temporary(), REG_ZR, current_temporary());
-  }
-
-  if (not) { // [logical-and-or-not]
-      emit_addi(next_temporary(), REG_ZR, 1);
-      emit_sltu(current_temporary(), current_temporary(), next_temporary());
   }
 
   // assert: allocated_temporaries == n + 1
@@ -5701,7 +5557,7 @@ void compile_if() {
       // "if" "(" expression ")"
       get_symbol();
 
-      compile_log_or(); // [logical-and-or-not]
+      compile_expression(); 
 
       // if the "if" condition is false we skip the true case
       // by branching to "else" (if provided)
@@ -5789,7 +5645,7 @@ void compile_while() {
     if (symbol == SYM_LPARENTHESIS) {
       get_symbol();
 
-      compile_log_or(); // [logical-and-or-not]
+      compile_expression(); 
 
       // if the "while" condition is false
       // we skip the "while" body by branching to the end
@@ -6209,7 +6065,7 @@ uint64_t compile_call(char* procedure) {
 
   if (is_expression()) {
     // try parsing first actual parameter
-    compile_log_or(); // [logical-and-or-not]
+    compile_expression(); 
 
     // TODO: check if types of actual and formal parameters match
 
@@ -6230,7 +6086,7 @@ uint64_t compile_call(char* procedure) {
       // try parsing next actual parameter
       get_symbol();
 
-      compile_log_or(); // [logical-and-or-not]
+      compile_expression(); 
 
       // push next actual parameter onto stack in reverse (!) order
       emit_store(REG_SP, number_of_actual_parameters * WORDSIZE, current_temporary());
@@ -6297,7 +6153,7 @@ void compile_return() {
 
   // optional: expression
   if (symbol != SYM_SEMICOLON) {
-    type = compile_log_or(); // [logical-and-or-not]
+    type = compile_expression(); 
 
     if (type != return_type)
       type_warning(return_type, type);

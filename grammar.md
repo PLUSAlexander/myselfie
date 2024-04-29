@@ -51,11 +51,7 @@ value      = integer | character .
 
 statement  = assignment ";" | if | while | call ";" | return ";" .
 
-assignment = ( [ "*" ] identifier | "*" "(" logical_or ")" ) "=" logical_or .
-
-logical_or = logical_and { "||" logical_and } . 
-
-logical_and  = expression "&&" expression . 
+assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
 
 expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 
@@ -66,22 +62,22 @@ arithmetic = term { ( "+" | "-" ) term } .
 term       = factor { ( "*" | "/" | "%" ) factor } .
 
 factor     = [ cast ] [ "-" ] [ "*" ] ["!"]
-             ( "sizeof" "(" type ")" | literal | identifier | call | "(" logical_or ")" ) .
+             ( "sizeof" "(" type ")" | literal | identifier | call | "(" expression ")" ) .
 
 literal    = value | string .
 
-if         = "if" "(" logical_or ")"
+if         = "if" "(" expression ")"
                ( statement | "{" { statement } "}" )
              [ "else"
                ( statement | "{" { statement } "}" ) ] .
 
-while      = "while" "(" logical_or ")"
+while      = "while" "(" expression ")"
                ( statement | "{" { statement } "}" ) .
 
 procedure  = ( type | "void" ) identifier "(" [ variable { "," variable } [ "," "..." ] ] ")"
              ( ";" | "{" { variable ";" } { statement } "}" ) .
 
-call       = identifier "(" [ logical_or { "," logical_or } ] ")" .
+call       = identifier "(" [ expression { "," expression } ] ")" .
 
-return     = "return" [ logical_or ] .
+return     = "return" [ expression ] .
 ```

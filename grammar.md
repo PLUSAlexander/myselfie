@@ -10,7 +10,7 @@ C\* is a tiny subset of the programming language C. C\* features global variable
 
 C\* Keywords: `uint64_t`, `void`, `sizeof`, `if`, `else`, `while`, `return`
 
-C\* Symbols: `integer`, `character`, `string`, `identifier`, `,`, `;`, `(`, `)`, `{`, `}`, `+`, `-`, `*`, `/`, `%`, `=`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `...`, `<<`, `>>`, `&`, `|`, `~`
+C\* Symbols: `integer`, `character`, `string`, `identifier`, `,`, `;`, `(`, `)`, `{`, `}`, `+`, `-`, `*`, `/`, `%`, `=`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `...`, `<<`, `>>`, `&`, `|`, `~`, `&&`, `||`, `!`
 
 with:
 
@@ -51,11 +51,17 @@ value      = integer | character .
 
 statement  = assignment ";" | if | while | call ";" | return ";" .
 
-assignment = ( [ "*" ] identifier | "*" "(" expression ")" ) "=" expression .
+assignment = ( [ "*" ] identifier | "*" "(" logical_or ")" ) "=" logical_or .
 
+<<<<<<< HEAD
 logical_or = logical_and { "||" logical_and } .
 
 logical_and = expression { "&&" expression } .
+=======
+logical_or = logical_and { "||" logical_and } . 
+
+logical_and  = expression "&&" expression . 
+>>>>>>> developmentbranch_logicalAndOrNot
 
 expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 
@@ -65,23 +71,23 @@ arithmetic = term { ( "+" | "-" ) term } .
 
 term       = factor { ( "*" | "/" | "%" ) factor } .
 
-factor     = [ cast ] [ "-" ] [ "*" ] ["~"]
-             ( "sizeof" "(" type ")" | literal | identifier | call | "(" expression ")" ) .
+factor     = [ cast ] [ "-" ] [ "*" ] ["!"]
+             ( "sizeof" "(" type ")" | literal | identifier | call | "(" logical_or ")" ) .
 
 literal    = value | string .
 
-if         = "if" "(" expression ")"
+if         = "if" "(" logical_or ")"
                ( statement | "{" { statement } "}" )
              [ "else"
                ( statement | "{" { statement } "}" ) ] .
 
-while      = "while" "(" expression ")"
+while      = "while" "(" logical_or ")"
                ( statement | "{" { statement } "}" ) .
 
 procedure  = ( type | "void" ) identifier "(" [ variable { "," variable } [ "," "..." ] ] ")"
              ( ";" | "{" { variable ";" } { statement } "}" ) .
 
-call       = identifier "(" [ expression { "," expression } ] ")" .
+call       = identifier "(" [ logical_or { "," logical_or } ] ")" .
 
-return     = "return" [ expression ] .
+return     = "return" [ logical_or ] .
 ```

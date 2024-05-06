@@ -78,6 +78,9 @@ if         = "if" "(" logical_or ")"
 while      = "while" "(" logical_or ")"
                ( statement | "{" { statement } "}" ) .
 
+for        = "for" "(" assignment ";" logical_or ";" assignment ")"
+               ( statement | "{" { statement } "}" ) .
+
 procedure  = ( type | "void" ) identifier "(" [ variable { "," variable } [ "," "..." ] ] ")"
              ( ";" | "{" { variable ";" } { statement } "}" ) .
 

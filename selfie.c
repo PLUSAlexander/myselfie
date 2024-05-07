@@ -5869,10 +5869,10 @@ void compile_for() { // [for-loop]
       get_symbol();
 
       if (symbol == SYM_IDENTIFIER) { // executed only once, no jump back or branch here
+        
         variable = identifier; 
         get_symbol();
         compile_assignment(variable);
-
       } else
         syntax_error_expected_symbol(SYM_IDENTIFIER);
 
@@ -5888,10 +5888,7 @@ void compile_for() { // [for-loop]
         branch_to_body = code_size;
         emit_beq(current_temporary(), current_temporary(), 0); // else, condition must be T, so jump into body
         
-        tfree(1);
-      } else
-        syntax_error_expected_symbol(SYM_SEMICOLON);
-
+      } 
       get_expected_symbol(SYM_SEMICOLON);
 
       jump_back_to_2nd_assignment = code_size;
@@ -5900,9 +5897,7 @@ void compile_for() { // [for-loop]
         variable = identifier;
         get_symbol();
         compile_assignment(variable);
-      } else
-        syntax_error_expected_symbol(SYM_RPARENTHESIS);
-        
+      }
       get_required_symbol(SYM_RPARENTHESIS);
 
       emit_jal(REG_ZR, jump_to_condition - code_size); // finished one iteration after the second assignment, jump back to condition and start again

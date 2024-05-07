@@ -5887,7 +5887,6 @@ void compile_for() { // [for-loop]
         
         branch_to_body = code_size;
         emit_beq(current_temporary(), current_temporary(), 0); // else, condition must be T, so jump into body
-        
       } 
       get_expected_symbol(SYM_SEMICOLON);
 

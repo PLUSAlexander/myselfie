@@ -461,18 +461,18 @@ uint64_t SYM_LEQ          = 26; // <=
 uint64_t SYM_GT           = 27; // >
 uint64_t SYM_GEQ          = 28; // >=
 uint64_t SYM_ELLIPSIS     = 29; // ...
-uint64_t SYM_SLL          = 34; // [bitwise-shift-compilation] <<
-uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation] >>
-uint64_t SYM_LOG_AND      = 36; // [logical-and-or-not] &&
-uint64_t SYM_LOG_OR       = 37; // [logical-and-or-not] ||
-uint64_t SYM_LOG_NOT      = 38; // [logical-and-or-not] !
-uint64_t SYM_FOR          = 39; // [for-loop] for
+uint64_t SYM_SLL          = 30; // [bitwise-shift-compilation] <<
+uint64_t SYM_SRL          = 31; // [bitwise-shift-compilation] >>
+uint64_t SYM_LOG_AND      = 32; // [logical-and-or-not] &&
+uint64_t SYM_LOG_OR       = 33; // [logical-and-or-not] ||
+uint64_t SYM_LOG_NOT      = 34; // [logical-and-or-not] !
+uint64_t SYM_FOR          = 35; // [for-loop] for
 
 // symbols for bootstrapping
 
-uint64_t SYM_INT      = 30; // int
-uint64_t SYM_CHAR     = 31; // char
-uint64_t SYM_UNSIGNED = 32; // unsigned
+uint64_t SYM_INT      = 36; // int
+uint64_t SYM_CHAR     = 37; // char
+uint64_t SYM_UNSIGNED = 38; // unsigned
 uint64_t SYM_CONST    = 40; // const
 
 uint64_t* SYMBOLS; // strings representing symbols

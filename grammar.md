@@ -49,7 +49,7 @@ cast       = "(" type ")" .
 
 value      = integer | character .
 
-statement  = assignment ";" | if | while | call ";" | return ";" .
+statement  = assignment ";" | if | while | for | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" logical_or ")" ) "=" logical_or .
 

@@ -5850,12 +5850,16 @@ void compile_while() {
 
 void compile_for() { // [for-loop]
   
-  uint64_t jump_back_to_for;
+  uint64_t jump_back_to_first_condition;
   uint64_t branch_forward_to_end;
+  uint64_t jump_to_2nd_assignment;
+  uint64_t branch_to_body;
   char* variable;
 
   branch_forward_to_end = 0;
-  jump_back_to_for = code_size;
+  jump_back_to_first_condition = 0;
+  jump_to_2nd_assignment = 0;
+  branch_to_body = 0;
   
   if (symbol == SYM_FOR) {
     // "for" "(" assignment ";" logical_or ";" assignment ")"
@@ -5864,52 +5868,69 @@ void compile_for() { // [for-loop]
     if (symbol == SYM_LPARENTHESIS) {
       get_symbol();
 
-      variable = identifier;
-      compile_assignment(variable);
-
-      if (symbol == SYM_SEMICOLON) {
+      if (symbol == SYM_IDENTIFIER) { // WIRD NUR BEIM ERSTEN MAL GEMACHT!!!
+        variable = identifier;
         get_symbol();
+        compile_assignment(variable);
 
+      } 
+      else 
+        syntax_error_expected_symbol(SYM_IDENTIFIER);    
+      
+      get_expected_symbol(SYM_SEMICOLON);
+
+      jump_back_to_first_condition = code_size;
+      if (symbol != SYM_SEMICOLON) {
         compile_log_or(); // SCHAUEN OB ES STIMMT!
 
         branch_forward_to_end = code_size;
-        emit_beq(current_temporary(), REG_ZR, 0);
+        emit_beq(current_temporary(), REG_ZR, 0); // wenn falsch, dann springe zum ende!
+        
+        branch_to_body = code_size;
+        emit_beq(REG_ZR, REG_ZR, 0); // jump in body
+        
         tfree(1);
+      } 
+      get_expected_symbol(SYM_SEMICOLON);
 
-        if (symbol == SYM_SEMICOLON) {
-          get_symbol();
+      jump_to_2nd_assignment = code_size;
+      if (symbol != SYM_RPARENTHESIS) {
 
-          variable = identifier;
-          compile_assignment(variable);
+        if (symbol == SYM_IDENTIFIER) {
 
-          if (symbol == SYM_RPARENTHESIS) {
+            variable = identifier;
             get_symbol();
+            compile_assignment(variable);
+        }
+      }
+      get_required_symbol(SYM_RPARENTHESIS);
 
-            if (symbol == SYM_LBRACE) {
-              // zero or more statements: "{" { statement } "}"
-              get_symbol();
+      emit_jal(REG_ZR, jump_to_2nd_assignment - code_size);
 
-              while (is_neither_rbrace_nor_eof())
-                // assert: allocated_temporaries == 0
-                compile_statement();
+      if (branch_to_body != 0) {
+        fixup_BFormat(branch_to_body);
+      }
 
-              get_required_symbol(SYM_RBRACE);
-            } else
-              // only one statement without "{" "}"
-              compile_statement();
-          } else
-            syntax_error_expected_symbol(SYM_RPARENTHESIS); 
-        } else
-          syntax_error_expected_symbol(SYM_SEMICOLON);
-      } else
-        syntax_error_expected_symbol(SYM_SEMICOLON);
+      if (symbol == SYM_LBRACE) {
+        // zero or more statements: "{" { statement } "}"
+        get_symbol();
+
+        while (is_neither_rbrace_nor_eof())
+          // assert: allocated_temporaries == 0
+          compile_statement();
+
+        get_required_symbol(SYM_RBRACE);
+      } else 
+        // only one statement without "{" "}"
+        compile_statement();
+
     } else
       syntax_error_expected_symbol(SYM_LPARENTHESIS);
   } else
     syntax_error_expected_symbol(SYM_FOR);
 
 
-  emit_jal(REG_ZR, jump_back_to_for - code_size); // if compile_log_or was true, check it again!
+  emit_jal(REG_ZR, jump_back_to_first_condition - code_size); // if compile_log_or was true, check it again!
 
   if (branch_forward_to_end != 0)
     fixup_BFormat(branch_forward_to_end); // if compile_log_or is 0 do not execute statement and jump over it!

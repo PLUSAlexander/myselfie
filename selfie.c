@@ -466,13 +466,14 @@ uint64_t SYM_SRL          = 35; // [bitwise-shift-compilation] >>
 uint64_t SYM_LOG_AND      = 36; // [logical-and-or-not] &&
 uint64_t SYM_LOG_OR       = 37; // [logical-and-or-not] ||
 uint64_t SYM_LOG_NOT      = 38; // [logical-and-or-not] !
+uint64_t SYM_FOR          = 39; // [for-loop] for
 
 // symbols for bootstrapping
 
 uint64_t SYM_INT      = 30; // int
 uint64_t SYM_CHAR     = 31; // char
 uint64_t SYM_UNSIGNED = 32; // unsigned
-uint64_t SYM_CONST    = 39; // const
+uint64_t SYM_CONST    = 40; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -548,6 +549,7 @@ void init_scanner () {
   *(SYMBOLS + SYM_LOG_AND)      = (uint64_t) "&&"; // [logical-and-or-not]    
   *(SYMBOLS + SYM_LOG_OR)       = (uint64_t) "||"; // [logical-and-or-not]  
   *(SYMBOLS + SYM_LOG_NOT)      = (uint64_t) "!"; // [logical-and-or-not]  
+  *(SYMBOLS + SYM_FOR)          = (uint64_t) "for"; // [for-loop]
 
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -753,6 +755,7 @@ uint64_t compile_literal(); // returns type
 
 void compile_if();
 void compile_while();
+void compile_for(); // [for-loop]
 
 char*    bootstrap_non_0_boot_level_procedures(char* procedure);
 uint64_t is_boot_level_0_only_procedure(char* procedure);
@@ -787,6 +790,7 @@ uint64_t number_of_string_literals  = 0;
 
 uint64_t number_of_assignments = 0;
 uint64_t number_of_while       = 0;
+uint64_t number_of_for         = 0; // [for-loop]
 uint64_t number_of_if          = 0;
 uint64_t number_of_calls       = 0;
 uint64_t number_of_return      = 0;
@@ -800,6 +804,7 @@ void reset_parser() {
 
   number_of_assignments = 0;
   number_of_while       = 0;
+  number_of_for         = 0; // [for-loop]
   number_of_if          = 0;
   number_of_calls       = 0;
   number_of_return      = 0;
@@ -3836,6 +3841,8 @@ uint64_t identifier_or_keyword() {
     return SYM_RETURN;
   else if (identifier_string_match(SYM_WHILE))
     return SYM_WHILE;
+  else if (identifier_string_match(SYM_FOR)) // [for-loop]
+    return SYM_FOR;
   else if (identifier_string_match(SYM_SIZEOF))
     return SYM_SIZEOF;
   else if (identifier_string_match(SYM_INT))
@@ -4536,6 +4543,8 @@ uint64_t is_not_statement() {
     return 0;
   else if (symbol == SYM_WHILE)
     return 0;
+  else if (symbol == SYM_FOR) // [for-loop]
+    return 0;
   else if (symbol == SYM_RETURN)
     return 0;
   else if (symbol == SYM_EOF)
@@ -4868,6 +4877,8 @@ void compile_statement() {
     compile_if();
   else if (symbol == SYM_WHILE)
     compile_while();
+  else if (symbol == SYM_FOR) // [for-loop]
+    compile_for();
   else if (symbol == SYM_RETURN) {
     compile_return();
 
@@ -5836,6 +5847,92 @@ void compile_while() {
 
   number_of_while = number_of_while + 1;
 }
+
+void compile_for() { // [for-loop]
+  
+  uint64_t branch_forward_to_end;
+  uint64_t jump_back_to_2nd_assignment;
+  uint64_t jump_to_condition;
+  uint64_t branch_to_body;
+  char* variable;
+
+  branch_forward_to_end = 0;
+  jump_back_to_2nd_assignment = 0;
+  jump_to_condition = 0;
+  branch_to_body = 0;
+  
+  // "for" "(" assignment ";" logical_or ";" assignment ")"
+  if (symbol == SYM_FOR) {
+    get_symbol();
+
+    if (symbol == SYM_LPARENTHESIS) {
+      get_symbol();
+
+      if (symbol == SYM_IDENTIFIER) { // executed only once, no jump back or branch here
+        
+        variable = identifier; 
+        get_symbol();
+        compile_assignment(variable);
+      } else
+        syntax_error_expected_symbol(SYM_IDENTIFIER);
+
+      get_expected_symbol(SYM_SEMICOLON);
+
+      jump_to_condition = code_size; 
+      if (symbol != SYM_SEMICOLON) {
+        compile_log_or(); // compile the condition and check if it is T or F
+
+        branch_forward_to_end = code_size;
+        emit_beq(current_temporary(), REG_ZR, 0); // if condition is F (current_temp == REG_ZR), branch to first instruction after for-body 
+        
+        branch_to_body = code_size;
+        emit_beq(current_temporary(), current_temporary(), 0); // else, condition must be T, so jump into body
+        
+      } 
+      get_expected_symbol(SYM_SEMICOLON);
+
+      jump_back_to_2nd_assignment = code_size;
+      if (symbol != SYM_RPARENTHESIS) { // second assignment here
+
+        variable = identifier;
+        get_symbol();
+        compile_assignment(variable);
+      }
+      get_required_symbol(SYM_RPARENTHESIS);
+
+      emit_jal(REG_ZR, jump_to_condition - code_size); // finished one iteration after the second assignment, jump back to condition and start again
+
+      if (branch_to_body != 0) {
+        fixup_BFormat(branch_to_body); // correct branch adress (skip the second assignment, do it afterwards)
+      }
+
+      if (symbol == SYM_LBRACE) {
+        // zero or more statements: "{" { statement } "}"
+        get_symbol();
+
+        while (is_neither_rbrace_nor_eof())
+          compile_statement();
+
+        get_required_symbol(SYM_RBRACE);
+      } else 
+        // only one statement without "{" "}"
+        compile_statement();
+
+    } else
+      syntax_error_expected_symbol(SYM_LPARENTHESIS);
+  } else
+    syntax_error_expected_symbol(SYM_FOR);
+
+
+  emit_jal(REG_ZR, jump_back_to_2nd_assignment - code_size); // now do the second assignmet
+
+  if (branch_forward_to_end != 0)
+    fixup_BFormat(branch_forward_to_end); // if compile_log_or is 0 do not execute statement and branch over it!
+
+  number_of_for = number_of_for + 1;
+}
+
+
 
 char* bootstrap_non_0_boot_level_procedures(char* procedure) {
   // define non-0-boot-level procedures without prefix in name

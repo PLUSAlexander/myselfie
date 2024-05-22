@@ -426,6 +426,8 @@ char CHAR_BACKSLASH    =  92; // ASCII code 92 = backslash
 char CHAR_DOT          = '.';
 char CHAR_AND_SIGN     = '&'; // [logical-and-or-not]
 char CHAR_VBAR         = '|'; // [logical-and-or-not]
+char CHAR_SQUAREB_L    = '['; // [array]
+char CHAR_SQUAREB_R    = ']'; // [array]
 
 uint64_t SYM_EOF = -1; // end of file
 
@@ -467,13 +469,15 @@ uint64_t SYM_LOG_AND      = 32; // [logical-and-or-not] &&
 uint64_t SYM_LOG_OR       = 33; // [logical-and-or-not] ||
 uint64_t SYM_LOG_NOT      = 34; // [logical-and-or-not] !
 uint64_t SYM_FOR          = 35; // [for-loop] for
+uint64_t SYM_SQUAREB_R    = 36; // [array]
+uint64_t SYM_SQUAREB_L    = 37; // [array]
 
 // symbols for bootstrapping
 
-uint64_t SYM_INT      = 36; // int
-uint64_t SYM_CHAR     = 37; // char
-uint64_t SYM_UNSIGNED = 38; // unsigned
-uint64_t SYM_CONST    = 39; // const
+uint64_t SYM_INT      = 38; // int
+uint64_t SYM_CHAR     = 39; // char
+uint64_t SYM_UNSIGNED = 40; // unsigned
+uint64_t SYM_CONST    = 41; // const
 
 uint64_t* SYMBOLS; // strings representing symbols
 
@@ -550,6 +554,8 @@ void init_scanner () {
   *(SYMBOLS + SYM_LOG_OR)       = (uint64_t) "||"; // [logical-and-or-not]  
   *(SYMBOLS + SYM_LOG_NOT)      = (uint64_t) "!"; // [logical-and-or-not] 
   *(SYMBOLS + SYM_FOR)          = (uint64_t) "for"; // [for-loop]
+  *(SYMBOLS + SYM_SQUAREB_L)    = (uint64_t) "["; // [array]
+  *(SYMBOLS + SYM_SQUAREB_R)    = (uint64_t) "]"; // [array]
 
 
   *(SYMBOLS + SYM_INT)      = (uint64_t) "int";
@@ -591,8 +597,9 @@ void reset_scanner() {
 // | 7 | scope   | REG_GP (global), REG_S0 (local)
 // +---+---------+
 
+// + flags for additional information
 uint64_t* allocate_symbol_table_entry() {
-  return smalloc(2 * sizeof(uint64_t*) + 6 * sizeof(uint64_t));
+  return smalloc(2 * sizeof(uint64_t*) + 7 * sizeof(uint64_t)); // [array]
 }
 
 uint64_t* get_next_entry(uint64_t* entry)  { return (uint64_t*) *entry; }
@@ -603,6 +610,7 @@ uint64_t  get_type(uint64_t* entry)        { return             *(entry + 4); }
 uint64_t  get_value(uint64_t* entry)       { return             *(entry + 5); }
 uint64_t  get_address(uint64_t* entry)     { return             *(entry + 6); }
 uint64_t  get_scope(uint64_t* entry)       { return             *(entry + 7); }
+uint64_t  get_flags(uint64_t *entry)       { return             *(entry + 8); } // [array]
 
 void set_next_entry(uint64_t* entry, uint64_t* next) { *entry       = (uint64_t) next; }
 void set_string(uint64_t* entry, char* identifier)   { *(entry + 1) = (uint64_t) identifier; }
@@ -612,11 +620,17 @@ void set_type(uint64_t* entry, uint64_t type)        { *(entry + 4) = type; }
 void set_value(uint64_t* entry, uint64_t value)      { *(entry + 5) = value; }
 void set_address(uint64_t* entry, uint64_t address)  { *(entry + 6) = address; }
 void set_scope(uint64_t* entry, uint64_t scope)      { *(entry + 7) = scope; }
+void set_flags(uint64_t *entry, uint64_t flags)      { *(entry + 8) = flags; } // [array]
+
 
 uint64_t hash(uint64_t* key);
 
 uint64_t* create_symbol_table_entry(uint64_t table, char* string,
   uint64_t line, uint64_t class, uint64_t type, uint64_t value, uint64_t address);
+
+uint64_t *create_symbol_table_entry_with_flags(uint64_t table, char *string,
+                                               uint64_t line, uint64_t class, uint64_t type, uint64_t value, uint64_t address, uint64_t flags); // [array] 
+
 
 uint64_t* search_symbol_table(uint64_t* entry, char* string, uint64_t class);
 uint64_t* search_global_symbol_table(char* string, uint64_t class);
@@ -647,6 +661,7 @@ uint64_t LOCAL_TABLE  = 2;
 
 // hash table size for global symbol table
 uint64_t HASH_TABLE_SIZE = 1024;
+
 
 // ------------------------ GLOBAL VARIABLES -----------------------
 
@@ -716,7 +731,9 @@ void type_warning(uint64_t expected, uint64_t found);
 
 void compile_cstar(); // grammar top symbol, parser entry
 
+// [array]  --> TODO: add parameter scope for easier checks in compile_variable
 uint64_t* compile_variable(char* variable, uint64_t type, uint64_t offset); // returns variable entry
+
 
 uint64_t compile_type(); // returns type
 
@@ -4164,7 +4181,15 @@ void get_symbol() {
             symbol = SYM_LOG_OR;
           } else
             syntax_error_expected_character(CHAR_VBAR);
-      } 
+            
+      } else if (character == CHAR_SQUAREB_L) { // [array]
+          get_character();
+          symbol = SYM_SQUAREB_L;
+
+      } else if (character == CHAR_SQUAREB_R) { // [array]
+          get_character();
+          symbol = SYM_SQUAREB_R;
+      }
 
 
       else {
@@ -4221,7 +4246,7 @@ uint64_t hash(uint64_t* key) {
 
 uint64_t* create_symbol_table_entry(uint64_t table, char* string,
   uint64_t line, uint64_t class, uint64_t type, uint64_t value, uint64_t address) {
-  uint64_t* new_entry;
+  /*uint64_t* new_entry;
   uint64_t* hashed_entry_address;
 
   new_entry = allocate_symbol_table_entry();
@@ -4247,8 +4272,42 @@ uint64_t* create_symbol_table_entry(uint64_t table, char* string,
     local_symbol_table = new_entry;
   }
 
-  return new_entry;
+  return new_entry; */
+  return create_symbol_table_entry_with_flags(table, string, line, class, type, value, address, 0);
 }
+
+// [array] 
+uint64_t* create_symbol_table_entry_with_flags(uint64_t table, char* string,
+  uint64_t line, uint64_t class, uint64_t type, uint64_t value, uint64_t address, uint64_t flags) {
+  uint64_t* new_entry;
+  uint64_t* hashed_entry_address;
+
+  new_entry = allocate_symbol_table_entry();
+
+  set_string(new_entry, string);
+  set_line_number(new_entry, line);
+  set_class(new_entry, class);
+  set_type(new_entry, type);
+  set_value(new_entry, value);
+  set_address(new_entry, address);
+  set_flags(new_entry, flags); // for additional information
+
+  // create entry at head of list of symbols
+  if (table == GLOBAL_TABLE) {
+    set_scope(new_entry, REG_GP);
+
+    hashed_entry_address = global_symbol_table + hash((uint64_t*) string);
+
+    set_next_entry(new_entry, (uint64_t*) *hashed_entry_address);
+    *hashed_entry_address = (uint64_t) new_entry;
+  } else {
+    set_scope(new_entry, REG_S0);
+    set_next_entry(new_entry, local_symbol_table);
+    local_symbol_table = new_entry;
+  }
+
+  return new_entry;
+} 
 
 uint64_t* search_symbol_table(uint64_t* entry, char* string, uint64_t class) {
   number_of_symbol_lookups = number_of_symbol_lookups + 1;
@@ -4703,8 +4762,14 @@ void compile_cstar() {
   }
 }
 
+// [array] ||| alreadry trying for [array-multidimensional]
 uint64_t* compile_variable(char* variable, uint64_t type, uint64_t offset) {
   uint64_t* entry;
+  uint64_t data_size_temp;
+  uint64_t data_size_nested_arr;
+  
+  data_size_temp = 1;
+  data_size_nested_arr = 0;
 
   if (variable != (char*) 0) {
     // lookahead of 1: identifier already parsed into variable (type may be left-factored)
@@ -4713,13 +4778,42 @@ uint64_t* compile_variable(char* variable, uint64_t type, uint64_t offset) {
     entry = search_global_symbol_table(variable, VARIABLE);
 
     if (entry == (uint64_t*) 0) {
+
       // allocate memory for global variable in data segment
-      data_size = data_size + WORDSIZE;
+      if (symbol == SYM_SQUAREB_L) { // [
+        
+        while (symbol == SYM_SQUAREB_L) {
+          
+          get_symbol();
+          compile_literal();
+          
+          data_size = data_size + WORDSIZE;               
+          data_size_nested_arr = data_size * data_size_temp;
+          data_size_temp = data_size_nested_arr;
+          
+          get_expected_symbol(SYM_SQUAREB_R);
+          tfree(1);
 
-      entry = create_symbol_table_entry(GLOBAL_TABLE, variable,
-        line_number, VARIABLE, type, 0, -data_size);
+        }
+        data_size_nested_arr = data_size_nested_arr + WORDSIZE;
 
+        entry = create_symbol_table_entry(GLOBAL_TABLE, variable,
+          line_number, VARIABLE, type, 0, -data_size_nested_arr);
+        
+        //get_expected_symbol(SYM_SQUAREB_R);
+        
+        
+      }
+      else {
+        data_size = data_size + WORDSIZE;
+
+        entry = create_symbol_table_entry(GLOBAL_TABLE, variable,
+          line_number, VARIABLE, type, 0, -data_size);
+
+      }
       number_of_global_variables = number_of_global_variables + 1;
+
+      
     } else {
       // global variable already declared or defined
       print_line_number("warning", line_number);
@@ -4743,6 +4837,7 @@ uint64_t* compile_variable(char* variable, uint64_t type, uint64_t offset) {
 
   return entry;
 }
+
 
 uint64_t compile_type() {
   uint64_t type;
@@ -5008,11 +5103,14 @@ void compile_assignment(char* variable) {
   uint64_t ltype;
   uint64_t rtype;
 
+  
+
   // assert: identifier has already been parsed if variable != (char*) 0
 
   // assert: allocated_temporaries == 0
 
   if (variable != (char*) 0) {
+
     // variable is identifier
     dereference = 0;
 
@@ -5028,6 +5126,7 @@ void compile_assignment(char* variable) {
       base = current_temporary();
 
     ltype = get_type(entry);
+    
   } else {
     // "*" identifier | "*" "(" expression ")"
     get_required_symbol(SYM_ASTERISK);
@@ -5425,6 +5524,7 @@ uint64_t compile_factor() {
   uint64_t not;
   char* variable_or_procedure;
 
+
   // assert: n = allocated_temporaries
 
   // synchronizing on strong symbols in case of syntax errors
@@ -5456,6 +5556,7 @@ uint64_t compile_factor() {
       return type;
     }
   }
+
   // optional: "-"
   if (symbol == SYM_MINUS) {
     negative = 1;
@@ -5509,7 +5610,25 @@ uint64_t compile_factor() {
 
     get_symbol();
 
-    if (symbol != SYM_LPARENTHESIS)
+    if (symbol == SYM_SQUAREB_L) { // [array] not working, but doesn't introduce any errors
+
+      type = load_variable(variable_or_procedure);
+      /*dereference = 0;
+      get_symbol();
+      type = load_variable(variable_or_procedure);
+      
+      compile_log_or();
+      talloc();
+      emit_multiply_by(current_temporary(), SIZEOFUINT);
+
+      get_expected_symbol(SYM_SQUAREB_R);
+
+      emit_add(current_temporary(), previous_temporary(), current_temporary());
+
+      emit_load(current_temporary(), current_temporary(), 0);  */    
+    }
+
+    else if (symbol != SYM_LPARENTHESIS)
       // variable access: identifier ...
       type = load_variable(variable_or_procedure);
     else {
@@ -5526,6 +5645,9 @@ uint64_t compile_factor() {
         // for now just load deterministic value
         emit_addi(current_temporary(), REG_ZR, 0);
     }
+
+    
+
   } else if (symbol == SYM_LPARENTHESIS) {
     // "(" expression ")"
     get_symbol();
@@ -6021,6 +6143,8 @@ void compile_procedure(char* procedure, uint64_t type) {
   uint64_t* entry;
   uint64_t number_of_local_variable_bytes;
 
+
+
   // lookahead of 1: identifier already parsed into procedure (type may be left-factored)
 
   local_symbol_table = (uint64_t*) 0;
@@ -6030,7 +6154,7 @@ void compile_procedure(char* procedure, uint64_t type) {
 
   number_of_formal_parameters = 0;
 
-  // try parsing formal parameters
+  // tryc parsing formal parameters
 
   if (symbol == SYM_LPARENTHESIS) {
     get_symbol();
@@ -6038,7 +6162,8 @@ void compile_procedure(char* procedure, uint64_t type) {
     if (symbol != SYM_RPARENTHESIS) {
       // try parsing first formal parameter
       if (is_type()) {
-        entry = compile_variable((char*) 0, compile_type(), 0);
+        
+        entry = compile_variable((char*) 0, compile_type(), 0); 
 
         number_of_formal_parameters = 1;
 
@@ -6144,7 +6269,7 @@ void compile_procedure(char* procedure, uint64_t type) {
       number_of_local_variable_bytes = number_of_local_variable_bytes + WORDSIZE;
 
       // offset of local variables relative to frame pointer is negative
-      compile_variable((char*) 0, compile_type(), -number_of_local_variable_bytes);
+      compile_variable((char*) 0, compile_type(), -number_of_local_variable_bytes); 
 
       get_expected_symbol(SYM_SEMICOLON);
     }

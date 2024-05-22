@@ -10,7 +10,7 @@ C\* is a tiny subset of the programming language C. C\* features global variable
 
 C\* Keywords: `uint64_t`, `void`, `sizeof`, `if`, `else`, `while`, `return`
 
-C\* Symbols: `integer`, `character`, `string`, `identifier`, `,`, `;`, `(`, `)`, `{`, `}`, `+`, `-`, `*`, `/`, `%`, `=`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `...`, `<<`, `>>`, `&`, `|`, `~`, `&&`, `||`, `!`
+C\* Symbols: `integer`, `character`, `string`, `identifier`, `,`, `;`, `(`, `)`, `{`, `}`, `+`, `-`, `*`, `/`, `%`, `=`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `...`, `<<`, `>>`, `&`, `|`, `~`, `&&`, `||`, `!`, `[`, `]`
 
 with:
 
@@ -37,9 +37,11 @@ hex_digit = digit | "a" | ... | "f" | "A" | ... | "F" .
 C\* Grammar:
 
 ```
-cstar      = { variable [ initialize ] ";" | procedure } .
+cstar      = { variable [ initialize ]  array ";" | procedure } .
 
 variable   = type identifier .
+
+array      = variable { "[" integer "]" } . 
 
 type       = "uint64_t" [ "*" ] .
 
@@ -81,8 +83,8 @@ while      = "while" "(" logical_or ")"
 for        = "for" "(" assignment ";" logical_or ";" assignment ")"
                ( statement | "{" { statement } "}" ) .
 
-procedure  = ( type | "void" ) identifier "(" [ variable { "," variable } [ "," "..." ] ] ")"
-             ( ";" | "{" { variable ";" } { statement } "}" ) .
+procedure  = ( type | "void" ) identifier "(" [ variable | array { "," variable } [ "," "..." ] ] ")"
+             ( ";" | "{" { variable | array ";" } { statement } "}" ) .
 
 call       = identifier "(" [ logical_or { "," logical_or } ] ")" .
 

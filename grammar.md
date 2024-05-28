@@ -37,11 +37,13 @@ hex_digit = digit | "a" | ... | "f" | "A" | ... | "F" .
 C\* Grammar:
 
 ```
-cstar      = { variable [ initialize ]  array ";" | procedure } .
+cstar      = { variable [ initialize ] | array | struct ";" | procedure } .
 
 variable   = type identifier .
 
 array      = variable { "[" integer "]" } . 
+
+struct     = "struct" identifier "{" { variable ";" } "};" . 
 
 type       = "uint64_t" [ "*" ] .
 

@@ -57,9 +57,9 @@ statement  = assignment ";" | if | while | for | call ";" | return ";" .
 
 assignment = ( [ "*" ] identifier | "*" "(" logical_or ")" ) "=" logical_or .
 
-logical_or = logical_and { "||" logical_and } . 
+logical_or = logical_and [ "||" logical_and ] . 
 
-logical_and  = expression { "&&" expression } . 
+logical_and  = expression [ "&&" expression ] . 
 
 expression = shift [ ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) shift ] .
 

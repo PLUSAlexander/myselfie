@@ -5533,89 +5533,99 @@ uint64_t compile_shift() { // [bitwise-shift-compilation]
 
 uint64_t compile_log_and() { // [logical-and-or-not]  
   uint64_t ltype;
-  uint64_t operator_symbol;
   uint64_t rtype;
+  uint64_t branch_over_first_zeros; // [lazy-evaluation]
 
-  // assert: n = allocated_temporaries
 
   ltype = compile_expression();  
 
-  // assert: allocated_temporaries == n + 1
-
 
   while (is_log_and()) {
-    operator_symbol = symbol;
 
     get_symbol();
+    
+    branch_over_first_zeros = code_size; // [lazy-evaluation]
+    emit_beq(current_temporary(), REG_ZR, 0); // [lazy-evaluation]    
 
     rtype = compile_expression(); 
 
-    // assert: allocated_temporaries == n + 2
-
-    if (ltype != rtype)
+    if (ltype != rtype) {
       type_warning(ltype, rtype);
+    }
+    
+    emit_addi(previous_temporary(), REG_ZR, 0);
+    emit_beq(current_temporary(), REG_ZR, 2 * INSTRUCTIONSIZE);
+    emit_addi(previous_temporary(), REG_ZR, 1);
 
-    // for lack of boolean type
-    //ltype = UINT64_T;
+    if (branch_over_first_zeros != 0) { // [lazy-evaluation]
+      fixup_BFormat(branch_over_first_zeros);
+    }
+    tfree(1);
 
-    if (operator_symbol == SYM_LOG_AND) {
-      emit_add(previous_temporary(), current_temporary(), previous_temporary());  // add 1 + 1
-      emit_addi(current_temporary(), REG_ZR, 1);
-      emit_sltu(previous_temporary(), current_temporary(), previous_temporary()); // 1 < 2
+  } 
 
-      tfree (1);
-    }  
-
-  }
-
-  // assert: allocated_temporaries == n + 1
-
-  // type of expression is grammar attribute
   return ltype;
-}
+}       
+//ORIGINAL COMPILE_LOG_AND:
+/*
+if (operator_symbol == SYM_LOG_AND) {
+  emit_add(previous_temporary(), current_temporary(), previous_temporary());  // add 1 + 1
+  emit_addi(current_temporary(), REG_ZR, 1);
+  emit_sltu(previous_temporary(), current_temporary(), previous_temporary()); // 1 < 2
+
+  //tfree (1);
+} 
+*/
 
 uint64_t compile_log_or() { // [logical-and-or-not]  
   uint64_t ltype;
-  uint64_t operator_symbol;
   uint64_t rtype;
+  uint64_t jump_to_end; // [lazy-evaluation]
 
-  // assert: n = allocated_temporaries
+  jump_to_end = 0;
 
-  ltype = compile_log_and();  
 
-  // assert: allocated_temporaries == n + 1
+  ltype = compile_log_and();
 
 
   while (is_log_or()) {
-    operator_symbol = symbol;
-
+    
     get_symbol();
 
+    emit_beq(current_temporary(), REG_ZR, 3 * INSTRUCTIONSIZE); // [lazy-evaluation]
+  
+    emit_addi(current_temporary(), REG_ZR, 1);
+    jump_to_end = code_size;
+    emit_jal(REG_ZR, 0);   
+
     rtype = compile_log_and(); 
-
-    // assert: allocated_temporaries == n + 2
-
-    if (ltype != rtype)
+    if (ltype != rtype) {
       type_warning(ltype, rtype);
-
-    // for lack of boolean type
-    //ltype = UINT64_T;
-
-    if (operator_symbol == SYM_LOG_OR) {
-      emit_add(previous_temporary(), current_temporary(), previous_temporary()); // only 0 + 0 will evaluate to 0, hence 0 < 0 --> F, T otherwise
-      emit_addi(current_temporary(), REG_ZR, 0);
-      emit_sltu(previous_temporary(), current_temporary(), previous_temporary());
-
-      tfree(1);
     }
+
+    emit_beq(current_temporary(), REG_ZR, 2 * INSTRUCTIONSIZE);
+    emit_addi(previous_temporary(), REG_ZR, 1);
+
+    if (jump_to_end != 0) { // [lazy-evaluation]
+      fixup_JFormat(jump_to_end, code_size);
+    }
+    tfree(1);
 
   }
 
-  // assert: allocated_temporaries == n + 1
-
-  // type of expression is grammar attribute
   return ltype;
 }
+
+
+//ORIGINAL COMPILE_LOG_OR:
+/*
+if (operator_symbol == SYM_LOG_OR) {
+  emit_add(previous_temporary(), current_temporary(), previous_temporary()); // only 0 + 0 will evaluate to 0, hence 0 < 0 --> F, T otherwise
+  emit_addi(current_temporary(), REG_ZR, 0);
+  emit_sltu(previous_temporary(), current_temporary(), previous_temporary());
+
+  tfree(1);
+} */
 
 uint64_t compile_factor() {
   uint64_t cast;
